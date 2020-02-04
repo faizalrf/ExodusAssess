@@ -1,0 +1,9 @@
+CLASSPATH=
+export CLASSPATH=.:/home/faisal/Work/Java/Exodus/resources/mariadb-java-client-2.4.1.jar
+clear
+
+mkdir -p resources
+
+cp *.jar *.xml *.properties resources
+
+java -Xms4196m -Xmx10240m mariadb.migration.Exodus
