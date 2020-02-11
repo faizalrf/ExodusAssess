@@ -22,9 +22,9 @@ public class ExodusAssess {
                 
         switch (CommandLineParam) {
             case "mysql":
-                System.out.println("-\nStarting MySQL Migration Job...");
+                System.out.println("-\nStarting MySQL Assessment...");
                 new mariadb.migration.mysql.MySQLMain();
-                System.out.println("MySQL Migration Job Completed...\n");
+                System.out.println("MySQL Assessment Completed...\n");
                 break;
             case "db2":
                 System.out.println("\nExodus " + args[0] + " not ready yet!!!\n\n");

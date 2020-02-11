@@ -1,8 +1,5 @@
 package mariadb.migration.mysql;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import mariadb.migration.*;
 
 public class MySQLMain {
