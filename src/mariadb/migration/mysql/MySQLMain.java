@@ -39,7 +39,7 @@ public class MySQLMain {
                 //TargetCon.SetCurrentSchema(oSchema.getSchemaName());
                 
                 for (TableHandler Tab : oSchema.getTables()) {
-                    System.out.println("Oh What a Lovely Table " + Tab.getTableName());
+                    //System.out.println("Oh What a Lovely Table " + Tab.getTableName());
                 }
             }
         } catch (Exception e) {
