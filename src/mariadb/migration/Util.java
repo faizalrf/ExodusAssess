@@ -136,4 +136,17 @@ public class Util {
 		}
 		return TmpStr.toString();
 	}
+
+	public static void BoxedText(String sMessage, String BoxChar, int BoxSize) {
+		int strLen;
+		strLen = sMessage.length();
+		
+		if (BoxSize <= strLen) {
+			BoxSize = strLen + 2;			
+		}
+
+		System.out.println("\n" + Util.rPad(BoxChar, BoxSize, BoxChar));
+		System.out.println(Util.rPad(BoxChar + " " + sMessage, BoxSize - 2, " ") + " " + BoxChar);
+		System.out.println(Util.rPad(BoxChar, BoxSize, BoxChar));
+	}
 }

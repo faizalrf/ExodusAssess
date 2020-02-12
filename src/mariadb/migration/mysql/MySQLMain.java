@@ -4,34 +4,42 @@ import mariadb.migration.*;
 
 public class MySQLMain {
     public String LogPath = Util.getPropertyValue("LogPath");
+    
+    DBCredentialsReader UCR = new DBCredentialsReader("resources/dbdetails.xml");
+    
+    //ALL Database will be scanned
     public MySQLMain() {
-        DBCredentialsReader UCR;
-        UCR = new DBCredentialsReader("resources/dbdetails.xml");
-        for (DataSources DC : UCR.DBCredentialsList())
-            StartExodusAssess(DC.getDBType());
-
+        for (DataSources DC : UCR.DBCredentialsList()) {
+            StartExodusAssess(DC);
+        }
         System.out.println("\n\n");
     }
 
-    public void StartExodusAssess(String strSourceCon) {
+    //Specific Database Source Execution and/or ALL
+    public MySQLMain(String strSourceDB) {
+        for (DataSources DC : UCR.DBCredentialsList()) {
+            if (DC.getDBType().toLowerCase().equals(strSourceDB) || strSourceDB.equals("all")) {
+                StartExodusAssess(DC);
+            }
+        }
+        System.out.println("\n\n");
+    }
+
+    public void StartExodusAssess(DataSources oDataSource) {
         //Read The Database
-        MySQLConnect SourceCon = new MySQLConnect(strSourceCon);
+        MySQLConnect SourceCon = new MySQLConnect(oDataSource.getDBType());
+        Util.BoxedText("Current Server: " + oDataSource.getHostName(), "=", 130);
+
         MySQLDatabase MyDB = new MySQLDatabase(SourceCon.getDBConnection());
-        System.out.println("\n\n-------------------------------------------------------");
-        System.out.println("- Parsing Completed, Starting Single Threaded Process -");
-        System.out.println("-------------------------------------------------------");
+        Util.BoxedText("Parsing Completed", "-", 130);
 
         try {
             for (SchemaHandler oSchema : MyDB.getSchemaList()) {
                 //Switch to the respective Schema
                 //TargetCon.SetCurrentSchema(oSchema.getSchemaName());
                 
-                System.out.println("\n-------------------------------------------------------");
-                System.out.println("- Starting `" + oSchema.getSchemaName() + "` Migration");
-                System.out.println("-------------------------------------------------------");
-
                 for (TableHandler Tab : oSchema.getTables()) {
-                    //Tab.
+                    System.out.println("Oh What a Lovely Table " + Tab.getTableName());
                 }
             }
         } catch (Exception e) {

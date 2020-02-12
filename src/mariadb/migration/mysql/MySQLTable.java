@@ -27,7 +27,7 @@ public class MySQLTable implements TableHandler {
 	private List<String> MyCheckConstraints = new ArrayList<String>();
 	private List<String> MyDeltaScripts = new ArrayList<String>();
 	private Connection oCon;
-	private long RowCount, DeltaRowCount, MD5SelectionPercent;
+	private long RowCount, DeltaRowCount;
 	private boolean isMigrationSkipped = false;
 
 	public MySQLTable(Connection iCon, String iSchemaName, String iTableName) {
@@ -43,7 +43,6 @@ public class MySQLTable implements TableHandler {
 		//Split up the Full Table Name into Schena + Table because I have to add "`" to the Full Table Name Variable
 		AdditionalCriteria = Util.getPropertyValue(SchemaName + "." + TableName + ".AdditionalCriteria");
 		WHERECriteria = Util.getPropertyValue(SchemaName + "." + TableName + ".WHERECriteria");
-		MD5SelectionPercent = Integer.valueOf(Util.getPropertyValue("MD5SelectionPercent"));
 
 		if (WHERECriteria.isEmpty()) {
 			WHERECriteria = "1=1";
@@ -74,29 +73,8 @@ public class MySQLTable implements TableHandler {
 		}
 	}
 
-	public void setMigrationSkipped() {
-		String ScriptSQL;
-		Statement oStatement;
-		ResultSet oResultSet;
-		ScriptSQL = "SELECT COUNT(*) ROW_COUNT FROM information_schema.tables where TABLE_SCHEMA = '" + SchemaName
-				+ "' AND TABLE_NAME = '" + TableName + "' AND " + Util.getPropertyValue("TablesToMigrate")
-				+ " AND NOT (" + Util.getPropertyValue("ExportTablesToFile") + ") AND NOT ("
-				+ Util.getPropertyValue("SkipTableMigration") + ")";
-		
-		try {
-			oStatement = oCon.createStatement();
-			oResultSet = oStatement.executeQuery(ScriptSQL);
-			if (oResultSet.next()) {
-				isMigrationSkipped = (oResultSet.getLong("ROW_COUNT") == 0);
-			}
-
-			oResultSet.close();
-			oStatement.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
+	public void setMigrationSkipped() {}
+	
 	public void setTableScript() {
 		String ScriptSQL;
 		//, TableScriptPrefix, TableScriptSuffix;
@@ -139,18 +117,12 @@ public class MySQLTable implements TableHandler {
 		DeltaTableScript = "";
 		SelectMD5 = "";
 	
-		System.out.print(Util.rPad("Parsing Table Structure " + FullTableName, 80, " ") + "--> ");
+		System.out.print(Util.rPad("Parsing " + FullTableName, 85, " ") + "--> ");
 		for (ColumnHandler Col : MyCol.getColumnList()) {
 			ColumnName = "`" + Col.getName() + "`";
 
 			//Added support for TimeStamp and DateTime fields
-			if (Col.getDataType().toUpperCase().equals("DATETIME") && Col.getNulls().toUpperCase().contains("NOT")) {
-				ColumnExpression = "COALESCE(A.`" + Col.getName() + "`, '0000-00-00 00:00:00') AS `" + Col.getName() + "`";
-			} else if (Col.getDataType().toUpperCase().equals("TIMESTAMP") && Col.getNulls().toUpperCase().contains("NOT")) {
-				ColumnExpression = "COALESCE(A.`" + Col.getName() + "`, '0000-00-00 00:00:00') AS `" + Col.getName() + "`";
-			} else {
-				ColumnExpression = "A.`" + Col.getName() + "`";
-			}
+			ColumnExpression = "A.`" + Col.getName() + "`";
 			SelectColumnList += ColumnExpression + ",";
 			RawColumnList += ColumnName + ",";
 			InsertBindList += "?,";
@@ -175,7 +147,7 @@ public class MySQLTable implements TableHandler {
 			}
 		}
 		System.out.print(Util.rPad("COLUMNS [" + Util.lPad(String.valueOf(MyCol.getColumnList().size()), 3, " ") + "]", 14, " "));
-		System.out.print("-->  ROWS [" + Util.lPad(Util.numberFormat.format(RowCount), 13, " ") + "]\n");
+		System.out.print("-->  ROWS [" + Util.lPad(Util.numberFormat.format(RowCount), 15, " ") + "]\n");
 
 		if (!SelectColumnList.isEmpty()) {
 			SelectColumnList = SelectColumnList.substring(0, SelectColumnList.length() - 1);
@@ -505,7 +477,7 @@ public class MySQLTable implements TableHandler {
 
 	public long getMD5Limit() {
 		long MD5Limit;
-		MD5Limit = (RowCount * MD5SelectionPercent / 100);
+		MD5Limit = 0;
 		return MD5Limit;
 	}
 }

@@ -41,7 +41,7 @@ public class MySQLView implements ViewHandler {
 				ViewScript.add(oResultSet.getString(2).replace(" `"+ViewName+"`", " `" 
 								+ SchemaName + "`." + "`"+ViewName+"`").replace(" \""+ViewName+"\"", " \"" 
 								+ SchemaName + "\"." + "\""+ViewName+"\""));
-				System.out.println(Util.rPad("Reading View Script " + FullViewName, 80, " ") + "--> [ OK ]");
+				System.out.println(Util.rPad("Reading View Script " + FullViewName, 85, " ") + "--> [ OK ]");
 
 			}
 

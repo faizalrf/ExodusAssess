@@ -42,7 +42,7 @@ public class MySQLSourceCode implements SourceCodeHandler {
 				SourceCodeScript.add(SqlMode);
 				SourceCodeScript.add("DROP " + ObjectType + " IF EXISTS " + FullObjectName);
 
-				System.out.println(Util.rPad("Reading " + ObjectType + " Script " + FullObjectName, 80, " ") + "--> [ OK ]");
+				System.out.println(Util.rPad("Reading " + ObjectType + " Script " + FullObjectName, 85, " ") + "--> [ OK ]");
 				//Custom Function to replace " with ` from start to the place until ObjectName!
 				SourceCodeScript.add(Util.ReplaceString(oResultSet.getString(3), '"', '`', ObjectName));
 			}

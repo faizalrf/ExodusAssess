@@ -9,6 +9,7 @@ import java.util.List;
 
 import mariadb.migration.SchemaHandler;
 import mariadb.migration.TableHandler;
+import mariadb.migration.Util;
 import mariadb.migration.ViewHandler;
 import mariadb.migration.SourceCodeHandler;
 
@@ -23,10 +24,7 @@ public class MySQLSchema implements SchemaHandler {
 	private List<String> SchemaSequences = new ArrayList<String>();
 	
     public MySQLSchema(Connection iSourceCon, String iSchemaName) {
-        System.out.println("\n\n------------------------------------------------------");
-        System.out.println("- Starting " + iSchemaName + " DB Schema Discovery");
-        System.out.println("------------------------------------------------------");
-
+        Util.BoxedText("Starting `" + iSchemaName + "` DB Schema Discovery", "~", 130);
         SourceCon = iSourceCon;
     	SchemaName = iSchemaName;
         setSchema();
@@ -91,6 +89,8 @@ public class MySQLSchema implements SchemaHandler {
                     SchemaTables.add(new MySQLTable(SourceCon, SchemaName, oResultSet.getString("TABLE_NAME")));
                 }
             }
+            if (SchemaTables.isEmpty()) { System.out.println("The Database is Empty!"); }
+
             oStatement.close();
             oResultSet.close();
         } catch (SQLException e) {
