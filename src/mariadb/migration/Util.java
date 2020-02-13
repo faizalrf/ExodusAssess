@@ -149,4 +149,19 @@ public class Util {
 		System.out.println(Util.rPad(BoxChar + " " + sMessage, BoxSize - 2, " ") + " " + BoxChar);
 		System.out.println(Util.rPad(BoxChar, BoxSize, BoxChar));
 	}
+
+	public static void BoxedText(String sPreBox, String sMessage, String sPostBox, String BoxChar, int BoxSize) {
+		int strLen;
+		strLen = sMessage.length();
+		
+		if (BoxSize <= strLen) {
+			BoxSize = strLen + 2;			
+		}
+
+		System.out.println(sPreBox);
+		System.out.println(Util.rPad(BoxChar, BoxSize, BoxChar));
+		System.out.println(Util.rPad(BoxChar + " " + sMessage, BoxSize - 2, " ") + " " + BoxChar);
+		System.out.println(Util.rPad(BoxChar, BoxSize, BoxChar));
+		System.out.print(sPostBox);
+	}
 }

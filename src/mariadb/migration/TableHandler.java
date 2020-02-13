@@ -35,6 +35,7 @@ public interface TableHandler {
     List<String> getTableConstraints();
     List<String> getCheckConstraints();
     List<String> getTriggers();
-    public boolean hasTableMigrated();
-    public String getMD5DSelectScript();    
+    boolean hasTableMigrated();
+    String getMD5DSelectScript();
+    ColumnCollectionHandler getColumnCollection();    
 }

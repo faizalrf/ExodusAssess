@@ -14,9 +14,8 @@ public class ExodusAssess {
         System.out.println("╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═════╝ ╚═════╝     ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝  ╚═════╝ ╚══════╝");
         System.out.println("\n\n");
         
-        if (args.length == 2) {
-            CommandLineParam = args[0].toLowerCase();
-            SourceDB = args[1].toLowerCase();
+        if (args.length == 1) {
+            SourceDB = args[0].toLowerCase();
         } else {
             System.out.println("Invalid arguments...");
         }
@@ -25,9 +24,7 @@ public class ExodusAssess {
                 
         switch (CommandLineParam) {
             case "mysql":
-                System.out.println("-\nStarting MySQL Assessment...");
                 new mariadb.migration.mysql.MySQLMain(SourceDB);
-                System.out.println("MySQL Assessment Completed...\n");
                 break;
             case "db2":
                 System.out.println("\nExodus " + args[0] + " not ready yet!!!\n\n");

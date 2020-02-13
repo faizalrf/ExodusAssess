@@ -17,6 +17,7 @@ public class MySQLDatabase implements DatabaseHandler {
     private List<SchemaHandler> SchemaList = new ArrayList<SchemaHandler>();
     private List<String> UserScript = new ArrayList<String>();
     private List<String> UserGrantsScript = new ArrayList<String>();
+    private List<GlobalVariables> ServerVariables = new ArrayList<GlobalVariables>();
     
     public MySQLDatabase(Connection iCon) {
         SourceCon = iCon;
@@ -24,6 +25,7 @@ public class MySQLDatabase implements DatabaseHandler {
             setSchemaList();
             setUserList();
             writeUserScript();
+            setGlobalVariables();
         } else {
             System.out.println("Connection Not Available!");
         }
@@ -147,4 +149,37 @@ public class MySQLDatabase implements DatabaseHandler {
             new Logger(Util.getPropertyValue("DDLPath") + "/" + "Users.sql", SqlStr + ";", true, false);
         }
     }
+
+    private void setGlobalVariables() {
+        String ScriptSQL;
+        Statement oStatement;
+        ResultSet oResultSet;
+
+        ScriptSQL = "SHOW GLOBAL VARIABLES";
+        
+        try {
+        	oStatement = SourceCon.createStatement();
+        	oResultSet = oStatement.executeQuery(ScriptSQL);
+
+            while (oResultSet.next()) {
+                GlobalVariables ServerVars = new GlobalVariables();
+                ServerVars.setVariableName(oResultSet.getString(1));
+                if (oResultSet.getString(2).toString().toLowerCase().isEmpty()) {
+                    ServerVars.setVariableValue("*");
+                } else {
+                    ServerVars.setVariableValue(oResultSet.getString(2).toString().toLowerCase());
+                }
+                ServerVariables.add(ServerVars);
+            }
+            oStatement.close();
+            oResultSet.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<GlobalVariables> getServerVariables() {
+        return ServerVariables;
+    }
 }
+

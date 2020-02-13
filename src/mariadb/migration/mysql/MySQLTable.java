@@ -63,12 +63,6 @@ public class MySQLTable implements TableHandler {
 			setTableScript();
 			setRecordCount();
 			setColumnList();
-			//Commented the following as these are not reqired due to "SHOW CREATE" usage of MySQL
-			//setConstraints();
-			//setPrimaryKeys();
-			//setForeignKeys();
-			//setCheckConstraints();
-			//setIndexes();
 			setTriggers();
 		}
 	}
@@ -168,10 +162,6 @@ public class MySQLTable implements TableHandler {
 			// Remove the last " AND "
 			DeltaPKColList = DeltaPKColList.substring(0, DeltaPKColList.length() - 5);
 
-			// Delta SELECT Script with OUTER JOIN and IS NULL
-			//DeltaSelectScript = TableSelectScript + " LEFT OUTER JOIN " + FullDeltaTableName + " B ON " + DeltaPKColList
-			//		+ " WHERE " + FirstKeyCol + " IS NULL AND " + WHERECriteria;
-			//TODO Work on the Delta Logic, Probably not gonna happen! 
 			DeltaSelectScript = TableSelectScript + " WHERE " + WHERECriteria + " " + AdditionalCriteria;
 
 			DeltaTableScript = "CREATE TABLE IF NOT EXISTS " + FullDeltaTableName + "("
@@ -479,5 +469,9 @@ public class MySQLTable implements TableHandler {
 		long MD5Limit;
 		MD5Limit = 0;
 		return MD5Limit;
+	}
+
+	public ColumnCollectionHandler getColumnCollection() {
+		return MyCol;
 	}
 }

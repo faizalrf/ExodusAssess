@@ -7,7 +7,7 @@
                   "console": "internalConsole",
                   "request": "launch",
                   "mainClass": "mariadb.migration.ExodusAssess",
-                  "args": "mysql DataBase3",
+                  "args": "DataBase3",
                   "projectName": "ExodusAssess"
             }
       ]
