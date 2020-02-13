@@ -78,11 +78,11 @@ Reading PROCEDURE Script `world`.`my_procedure_Local_Variables`                 
 
 
 ==================================================================================================================================
-= Starting Compatibility Run                                                                                                     =
+= Starting Compatibility Check                                                                                                   =
 ==================================================================================================================================
 
 **********************************************************************************************************************************
-* Validating Data Types                                                                                                          *
+* Checking for Unsupported Data Types                                                                                            *
 **********************************************************************************************************************************
 j_data.c1 -> json[XX] --> Needs to be altered
 j_data.c2 -> text[XX] --> Needs to be altered
@@ -90,7 +90,7 @@ posts.body -> text[XX] --> Needs to be altered
 
 
 **********************************************************************************************************************************
-* Validating MySQL Functions in Views & Source Code                                                                              *
+* Checking for MySQL Specific Functions in Views & Source Code                                                                   *
 **********************************************************************************************************************************
 - Views -
 `world`.`v_dummy` -> [xx] --> This view uses `wait_for_executed_gtid_set()` function unsupported by MariaDB!
@@ -105,9 +105,19 @@ posts.body -> text[XX] --> Needs to be altered
 
 
 **********************************************************************************************************************************
-* Validating MySQL Specific Server Variables                                                                                     *
+* Checking for SHA256 Plugin based Configuration                                                                                 *
 **********************************************************************************************************************************
-default_authentication_plugin(sha256_password) Is MySQL specific variable and does not match the defaults!
+default_authentication_plugin(sha256_password) Is MySQL specific config & not supported by MariaDB!
+
+**********************************************************************************************************************************
+* Checking for Transparent Data Encryption, TDE                                                                                  *
+**********************************************************************************************************************************
+No Issues Found...
+
+**********************************************************************************************************************************
+* Checking for Other MySQL Specific System Variables                                                                             *
+**********************************************************************************************************************************
+No Issues Found...
 
 
 ##################################################################################################################################
@@ -132,9 +142,8 @@ SourceConnectPrefix=jdbc:mariadb://
 #useUnicode=yes&characterEncoding=utf8&useSSL=false
 
 #Paths with reference to the current folder. Do not use "/" at the end of the path
-LogPath=/../ExodusAssess/logs
-DDLPath=/../ExodusAssess/ddl
-ReportPath=/../ExodusAssess/report
+LogPath=/../ExodusAssess/bin/logs
+ReportPath=/../ExodusAssess/bin/export
 
 #Database User's to Migrate
 UsersToMigrate=USER NOT LIKE 'mysql%' AND USER NOT LIKE 'root%'
@@ -149,12 +158,20 @@ TablesToMigrate=TABLE_NAME LIKE '%'
 #The following Names should always be there, any additional tables, just add on to the list or use "AND additional expression"
 SkipTableMigration=TABLE_NAME IN ('MigrationLog', 'MigrationLogDETAIL')
 
+#Data Types to verify if exists in the MySQL Tables
+DataTypesToCheck=JSON
+
 #Functions to search for in the Source Code and Views
-FunctionsToCheck=GTID_SUBSET(), GTID_SUBTRACT(), WAIT_FOR_EXECUTED_GTID_SET(), WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS(), DISTANCE(), MBRCOVEREDBY(), ST_BUFFER_STRATEGY(), ST_DISTANCE_SPHERE(), ST_GeoHash(), ST_IsValid(), ST_LatFromGeoHash(), ST_LongFromGeoHash(), ST_PointFromGeoHash(), ST_SIMPLIFY(), ST_VALIDATE(), RANDOM_BYTES(), RELEASE_ALL_LOCKS(), VALIDATE_PASSWORD_STRENGTH()
+FunctionsToCheck=OVER, ROWS, RECURSIVE, ->, ->>, GTID_SUBSET, GTID_SUBTRACT, WAIT_FOR_EXECUTED_GTID_SET, WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS, DISTANCE, MBRCOVEREDBY, ST_BUFFER_STRATEGY, ST_DISTANCE_SPHERE, ST_DISTANCE, ST_GeoHash, ST_IsValid, ST_LatFromGeoHash, ST_LongFromGeoHash, ST_PointFromGeoHash, ST_SIMPLIFY, ST_VALIDATE, RANDOM_BYTES, RELEASE_ALL_LOCKS, VALIDATE_PASSWORD_STRENGTH
 
-SystemVariablesToCheck=avoid_temporal_upgrade|OFF, binlog_error_action|ABORT_SERVER, etc...
+#System Variables to search for in the Server Config
+SystemVariablesToCheck=avoid_temporal_upgrade:OFF, binlog_error_action:ABORT_SERVER, binlog_group_commit_sync_delay:0, binlog_group_commit_sync_no_delay_count:0, binlog_gtid_simple_recovery:ON, binlog_max_flush_queue_time:0, binlog_order_commits:ON, binlog_rows_query_log_events:OFF, block_encryption_mode:aes-128-ecb, check_proxy_users:OFF, default_password_lifetime:0, disconnect_on_expired_password:ON, end_markers_in_json:OFF, enforce_gtid_consistency:OFF, gtid_executed:*, gtid_next:*, gtid_purged:*, internal_tmp_disk_storage_engine:INNODB, log_bin_use_v1_row_events:OFF, log_builtin_as_identified_by_password:OFF, log_error_verbosity:3, log_statements_unsafe_for_binlog:ON, log_throttle_queries_not_using_indexes:0, master_info_repository:FILE, max_execution_time:0, mysql_native_password_proxy_users:OFF, ngram_token_size:2, offline_mode:OFF, rbr_exec_mode:STRICT, relay_log_info_repository:FILE, require_secure_transport:OFF, rpl_stop_slave_timeout:31536000, server_id_bits:32, session_track_gtids:OFF, sha256_password_proxy_users:OFF, show_compatibility_56:OFF, show_old_temporals:OFF, slave_allow_batching:OFF, slave_checkpoint_group:512, slave_checkpoint_period:300, slave_parallel_type:DATABASE, slave_pending_jobs_size_max:16777216, slave_preserve_commit_order:OFF, super_read_only:OFF, transaction_allow_batching:OFF, transaction_write_set_extraction:OFF
 
-PluginsToCheck=SHA256, ..., etc.
+#SHA256 Password Plugin
+SHA256PasswordCheck=default_authentication_plugin:mysql_native_password
+
+#InnoDB Encryption Check
+EncryptionParametersToCheck=keyring_file_data:data, keyring_encrypted_file_data:data
 ```
 
 This tool assumes that the source database is MySQL 5.7 and uses MariaDB Java Connector to connect to MySQL.
@@ -176,12 +193,23 @@ The following are the parameters from the `Exodus.properties` file
   - Takes a standard SQL syntax to include the tables to assess across all databases
 - `SkipTableMigration`
   - Takes a standard SQL syntax to define the tables to skip from the assessment across all databases
+- `DataTypesToCheck`
+  - This parameters takes a coma separated list of data types that are not supported by MySQL
+    - Currently only `JSON` is defined as the not supported data type which needs to be converted to LONGTEXT before migration. 
 - `FunctionsToCheck`
-  - Functions that are native to MySQL 5.7 will be checked if present in the View's definition or the Stored Procedures/Functions
+  - This parameter takes a coma separated list of Functions that are native to MySQL 5.7 will be checked if present in the View's definition or the Stored Procedures/Functions
   - Any other source code like shell scripts or front-end application code will be out of scope for this tool
+  - This list also includes keywords like OVER, ROWS etc or special operators like MySQL JSON ->  or -->
 - `SystemVariablesToCheck`
-  - Verify all the MySQL 5.7 specific system variables for "non-default" values setup and highlight the ones that are configured.
-- `PluginsToCheck`
-  - Additional incompatible plugins to check if existing in the server which are not supported by MariaDB.
+  - This parameter takes a coma separated list of key/value pairs separated by coma and then colon ":"
+  - Configuration in this file is variableName:defaultValue
+    - This is will validated against the MySQL server to confirm that the parameter has not been configured differently which may not work in MariaDB
+    - Such variables must be removed from the server.cnf/my.cnf file before migrating to MariaDB
+- `SHA256PasswordCheck`
+  - To validate the SHA256 User Authentication plugin.
+    - This is authenticated by vefirying that the value of `default_authentication_plugin` is nolonger `mysql_native_password` Which means that the users created using this new authentication will not work when Migrated to MariaDB
+- `EncryptionParametersToCheck`
+  - This will verify if Encryption specific parameters exists in the Server config.
+    - `keyring_file_data` and `keyring_encrypted_file_data` variables are checked to determine if Encryption is in in use. The InnpDB Encryption from MySQL does not work with MariaDB 
 
-Other incompatibilities will be validated like JSON columns, additional plugins that are not compatible etc.
+Additional compatibility checks will be added here

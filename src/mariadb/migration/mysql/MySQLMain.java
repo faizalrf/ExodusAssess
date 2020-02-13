@@ -56,7 +56,6 @@ public class MySQLMain {
 
             Util.BoxedText("", "Checking for Other MySQL Specific System Variables", "", "*", 130);
             ValidateServerVariables(MyDB, "SystemVariablesToCheck");
-
         } catch (Exception e) {
             System.out.println("Error While Processing");
             new Logger(LogPath + "/Exodus.err", "Error While Processing - " + e.getMessage(), true);
