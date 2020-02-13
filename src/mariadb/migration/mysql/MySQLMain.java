@@ -37,15 +37,25 @@ public class MySQLMain {
         MySQLDatabase MyDB = new MySQLDatabase(SourceCon.getDBConnection());
         Util.BoxedText("Parsing Completed", "-", 130);
 
-        Util.BoxedText("\n", "Starting Compatibility Run", "", "=", 130);
+        Util.BoxedText("\n", "Starting Compatibility Check", "", "=", 130);
 
         try {
             //Run Validations
             for (SchemaHandler oSchema : MyDB.getSchemaList()) {
+                Util.BoxedText("", "Checking for Unsupported Data Types", "", "*", 130);
                 ValidateDataTypes(oSchema);
+
+                Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views & Source Code", "", "*", 130);
                 ValidateFunctons(oSchema);
             }
-            ValidateServerVariables(MyDB);
+            Util.BoxedText("\n", "Checking for SHA256 Plugin based Configuration", "", "*", 130);
+            ValidateServerVariables(MyDB, "SHA256PasswordCheck");
+
+            Util.BoxedText("", "Checking for Transparent Data Encryption, TDE", "", "*", 130);
+            ValidateServerVariables(MyDB, "EncryptionParametersToCheck");
+
+            Util.BoxedText("", "Checking for Other MySQL Specific System Variables", "", "*", 130);
+            ValidateServerVariables(MyDB, "SystemVariablesToCheck");
 
         } catch (Exception e) {
             System.out.println("Error While Processing");
@@ -53,39 +63,45 @@ public class MySQLMain {
             e.printStackTrace();
         } finally {
             SourceCon.DisconnectDB();
+            Util.BoxedText("\n", "Compatibility Check Completed...", "", "#", 130);
         }
     }
 
     //Validate The Data Types and check against the "DataTypesToCheck"
     private void ValidateDataTypes(SchemaHandler objSchema) {
-        if (objSchema.getTables().size() > 0)
-        Util.BoxedText("", "Validating Data Types", "", "*", 130);
-
+        boolean bAlert = false;
         for (TableHandler Tab : objSchema.getTables()) {
             for (ColumnHandler Col : Tab.getColumnCollection().getColumnList()) {
                 for (String DataType : getListOfValues("DataTypesToCheck")) {
                     if (Col.getDataType().toLowerCase().equals(DataType)) {
-                        System.out.println(Tab.getTableName() + "." + Col.getName() + " -> " + Col.getDataType() + "[XX] --> Needs to be altered") ;
+                        System.out.println(Tab.getTableName() + "." + Col.getName() + " -> " + Col.getDataType() + "[XX] --> Needs to be altered");
+                        bAlert = true;
                     }
                 }
             }
         }
+        if (!bAlert) {
+            System.out.println("No Issues Found...");
+        }
     }
 
     private void ValidateFunctons(SchemaHandler objSchema) {
-        if (objSchema.getTables().size() > 0)
-        Util.BoxedText("\n", "Validating MySQL Functions in Views & Source Code", "", "*", 130);
-
+        boolean bAlert=false;
         System.out.println("- Views -");
         for (ViewHandler View : objSchema.getViewsList()) {
             for (String FunctionName : getListOfValues("FunctionsToCheck")) {
                 for (String ViewScript : View.getViewScript()) {
                     if (ViewScript.toLowerCase().contains(FunctionName)) {
                         System.out.println(View.getFullViewName() + " -> [xx] --> This view uses `" + FunctionName + "()` function unsupported by MariaDB!" );
+                        bAlert = true;
                     }
                 }
             }
         }
+        if (!bAlert) {
+            System.out.println("No Issues Found...");
+        }
+        bAlert = false;
 
         System.out.println("\n- Source Code -");
         for (SourceCodeHandler srcCode : objSchema.getSourceCodeList()) {
@@ -93,18 +109,22 @@ public class MySQLMain {
                 for (String strLine : srcCode.getSourceScript()) {
                     if (strLine.toLowerCase().contains(FunctionName)) {
                         System.out.println(srcCode.getFullObjectName() + " -> [xx] --> This " + srcCode.getSourceType() + " uses `" + FunctionName + "()` function unsupported by MariaDB!" );
+                        bAlert = true;
                     }
                 }
             }
         }
+        if (!bAlert) {
+            System.out.println("No Issues Found...");
+        }
     }
 
-    private void ValidateServerVariables(MySQLDatabase oMyDB) {
+    private void ValidateServerVariables(MySQLDatabase oMyDB, String sParam) {
         List<String> KeyVal = new ArrayList<String>();
+        boolean bAlert=false;
 
-        Util.BoxedText("\n", "Validating MySQL Specific Server Variables", "", "*", 130);
         for (GlobalVariables gVars : oMyDB.getServerVariables()) {
-            for (String pVar : getListOfValues("SystemVariablesToCheck")) {
+            for (String pVar : getListOfValues(sParam)) {
                 String[] tmpArr = pVar.split(":");
                 Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim().toLowerCase());
                 //System.out.println(pVar);
@@ -115,12 +135,15 @@ public class MySQLMain {
                 
                 if (KeyVal.get(0).toString().equals(gVars.getVariableName().toLowerCase())) {
                     if (!KeyVal.get(1).toString().toLowerCase().equals(gVars.getVariableValue().toString().toLowerCase())) {
-                        System.out.println(gVars.getVariableName().toLowerCase() + "(" + gVars.getVariableValue().toString().toLowerCase() + ") Is MySQL specific variable and does not match the defaults!");
+                        System.out.println(gVars.getVariableName().toLowerCase() + "(" + gVars.getVariableValue().toString().toLowerCase() + ") Is MySQL specific config & not supported by MariaDB!");
+                        bAlert = true;
                     }
                 }
             }
         }
-        Util.BoxedText("\n", "Compatibility Check Completed...", "", "#", 130);
+        if (!bAlert) {
+            System.out.println("No Issues Found...");
+        }
     }
 
     private List<String> getListOfValues(String sParam) {
