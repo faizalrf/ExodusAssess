@@ -4,16 +4,8 @@ package mariadb.migration;
 public class ExodusAssess {
     public static void main(String[] args) {
         String CommandLineParam = "mysql", SourceDB = "ALL";
+        System.out.println("\n");
 
-        System.out.println("");
-        System.out.println("███╗   ███╗ █████╗ ██████╗ ██╗ █████╗ ██████╗ ██████╗     ███████╗██╗  ██╗ ██████╗ ██████╗ ██╗   ██╗███████╗");
-        System.out.println("████╗ ████║██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔══██╗    ██╔════╝╚██╗██╔╝██╔═══██╗██╔══██╗██║   ██║██╔════╝");
-        System.out.println("██╔████╔██║███████║██████╔╝██║███████║██║  ██║██████╔╝    █████╗   ╚███╔╝ ██║   ██║██║  ██║██║   ██║███████╗");
-        System.out.println("██║╚██╔╝██║██╔══██║██╔══██╗██║██╔══██║██║  ██║██╔══██╗    ██╔══╝   ██╔██╗ ██║   ██║██║  ██║██║   ██║╚════██║");
-        System.out.println("██║ ╚═╝ ██║██║  ██║██║  ██║██║██║  ██║██████╔╝██████╔╝    ███████╗██╔╝ ██╗╚██████╔╝██████╔╝╚██████╔╝███████║");
-        System.out.println("╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═════╝ ╚═════╝     ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝  ╚═════╝ ╚══════╝");
-        System.out.println("\n\n");
-        
         if (args.length == 1) {
             SourceDB = args[0].toLowerCase();
         } else {
@@ -21,7 +13,7 @@ public class ExodusAssess {
         }
 
         System.out.println("Assessment Path: " + SourceDB + "\n");
-                
+
         switch (CommandLineParam) {
             case "mysql":
                 new mariadb.migration.mysql.MySQLMain(SourceDB);

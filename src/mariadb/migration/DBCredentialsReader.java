@@ -44,7 +44,7 @@ public class DBCredentialsReader implements XMLParser {
                     Element eElement = (Element) nNode;
 
                     //If DB Tag matches the source provided then read its structure
-                    if (eElement.getAttribute("type").equals(DBType)) {
+                    if (eElement.getAttribute("ServerName").equals(DBType)) {
                         CurrentUserCredentials.setDBType(DBType);
                         CurrentUserCredentials.setDBName(eElement.getElementsByTagName("DatabaseName").item(0).getTextContent());
                         CurrentUserCredentials.setUserName(eElement.getElementsByTagName("UserName").item(0).getTextContent());
@@ -86,7 +86,7 @@ public class DBCredentialsReader implements XMLParser {
 
                     Element eElement = (Element) nNode;
 
-                    CurrentUserCredentials.setDBType(eElement.getAttribute("type"));
+                    CurrentUserCredentials.setDBType(eElement.getAttribute("ServerName"));
                     CurrentUserCredentials.setDBName(eElement.getElementsByTagName("DatabaseName").item(0).getTextContent());
                     CurrentUserCredentials.setUserName(eElement.getElementsByTagName("UserName").item(0).getTextContent());
                     CurrentUserCredentials.setPassword(eElement.getElementsByTagName("Password").item(0).getTextContent());

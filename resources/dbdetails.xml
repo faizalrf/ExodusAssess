@@ -1,20 +1,20 @@
 <?xml version="1.1"?>
 <DataSources>
-	<DataProvider type="DataBase1">
+	<DataProvider ServerName="DataBase1">
 		<UserName>migration</UserName>
 		<Password>password</Password>
 		<HostName>192.168.56.101</HostName>
 		<PortNumber>3306</PortNumber>
 		<DatabaseName>mysql</DatabaseName>
 	</DataProvider>
-	<DataProvider type="DataBase2">
+	<DataProvider ServerName="DataBase2">
 		<UserName>migration</UserName>
 		<Password>password</Password>
 		<HostName>192.168.56.102</HostName>
 		<PortNumber>3306</PortNumber>
 		<DatabaseName>mysql</DatabaseName>
 	</DataProvider>
-	<DataProvider type="DataBase3">
+	<DataProvider ServerName="DataBase3">
 		<UserName>migration</UserName>
 		<Password>password</Password>
 		<HostName>192.168.56.103</HostName>

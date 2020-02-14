@@ -5,30 +5,30 @@ Migration Assessment Tool for MySQL 5.7 to MariaDB 10.3+ Migration
 The executable script is the Java class file `ExodusAssess.class` which takes one commandline argument.
 
 - Source Database Name
-  - This parameter links up with `DataProvider type` of the `resources/dbdetail.xml` 
+  - This parameter links up with `DataProvider ServerName` of the `resources/dbdetails.xml` 
   - If the specific database name is passed, that database configuration is read
   - alternatively **ALL** can be passed as an argument, which will force this tool to load all the configurations, this is great to run assessment on multiple servers in one go
 
-The `resources/dbdetail.xml` has the following contents, this sample has three database servers defined with their user accounts and passwords. 
+The `resources/dbdetails.xml` has the following contents, this sample has three database servers defined with their user accounts and passwords. 
 
 ```
 <?xml version="1.1"?>
 <DataSources>
-	<DataProvider type="DataBase1">
+	<DataProvider ServerName="DataBase1">
 		<UserName>migration</UserName>
 		<Password>password</Password>
 		<HostName>192.168.56.101</HostName>
 		<PortNumber>3306</PortNumber>
 		<DatabaseName>mysql</DatabaseName>
 	</DataProvider>
-	<DataProvider type="DataBase2">
+	<DataProvider ServerName="DataBase2">
 		<UserName>migration</UserName>
 		<Password>password</Password>
 		<HostName>192.168.56.102</HostName>
 		<PortNumber>3306</PortNumber>
 		<DatabaseName>mysql</DatabaseName>
 	</DataProvider>
-	<DataProvider type="DataBase3">
+	<DataProvider ServerName="DataBase3">
 		<UserName>migration</UserName>
 		<Password>password</Password>
 		<HostName>192.168.56.103</HostName>
@@ -40,18 +40,10 @@ The `resources/dbdetail.xml` has the following contents, this sample has three d
 
 ## Running the Assessment
 
-The following sample output passes `database3` as the argument which will read the configuration for mysql running on `192.168.56.103` 
+The following sample output using `database3` as the argument which will read the configuration for mysql running on `192.168.56.103`, if `ALL` is passed as the argument instead, the tool will scan through all the databases configured in the `resources/dbdetails.xml` file. 
 
 ```
 shell> java ExodusAssess database3
-
-
-███╗   ███╗ █████╗ ██████╗ ██╗ █████╗ ██████╗ ██████╗     ███████╗██╗  ██╗ ██████╗ ██████╗ ██╗   ██╗███████╗
-████╗ ████║██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██╔══██╗    ██╔════╝╚██╗██╔╝██╔═══██╗██╔══██╗██║   ██║██╔════╝
-██╔████╔██║███████║██████╔╝██║███████║██║  ██║██████╔╝    █████╗   ╚███╔╝ ██║   ██║██║  ██║██║   ██║███████╗
-██║╚██╔╝██║██╔══██║██╔══██╗██║██╔══██║██║  ██║██╔══██╗    ██╔══╝   ██╔██╗ ██║   ██║██║  ██║██║   ██║╚════██║
-██║ ╚═╝ ██║██║  ██║██║  ██║██║██║  ██║██████╔╝██████╔╝    ███████╗██╔╝ ██╗╚██████╔╝██████╔╝╚██████╔╝███████║
-╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═════╝ ╚═════╝     ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝  ╚═════╝ ╚══════╝
 
 
 Assessment Path: database3
@@ -119,6 +111,8 @@ No Issues Found...
 **********************************************************************************************************************************
 No Issues Found...
 
+
+Report is generated in the JSON format under /../ExodusAssess/bin/export, named by each of the given database names given.
 
 ##################################################################################################################################
 # Compatibility Check Completed...                                                                                               #
