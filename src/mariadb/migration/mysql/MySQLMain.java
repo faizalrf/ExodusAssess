@@ -1,5 +1,8 @@
 package mariadb.migration.mysql;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,19 +11,23 @@ import mariadb.migration.*;
 
 public class MySQLMain {
     public String LogPath = Util.getPropertyValue("LogPath");
+    public List<String> StringTerminator;
+
     
     DBCredentialsReader UCR = new DBCredentialsReader("resources/dbdetails.xml");
     
-    //ALL Database will be scanned
-    public MySQLMain() {
-        for (DataSources DC : UCR.DBCredentialsList()) {
-            StartExodusAssess(DC);
-        }
-        System.out.println("\n\n");
-    }
-
     //Specific Database Source Execution and/or ALL
     public MySQLMain(String strSourceDB) {
+        String tmpStr = Util.getPropertyValue("StringTerminator");
+        String[] tmpArr = tmpStr.split(",");
+        Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim().toLowerCase());
+
+        if (tmpArr.length > 0) {
+            StringTerminator = Arrays.asList(tmpArr);
+        } else {
+            StringTerminator = new ArrayList<String>();
+        }
+
         for (DataSources DC : UCR.DBCredentialsList()) {
             if (DC.getDBType().toLowerCase().equals(strSourceDB) || strSourceDB.equals("all")) {
                 StartExodusAssess(DC);
@@ -48,26 +55,65 @@ public class MySQLMain {
 
                 //FunctionsToCheck
                 Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views & Source Code", "", "*", 130);
-                ValidateFunctons(oSchema, "FunctionsToCheck");
+                CheckInViews(oSchema, "FunctionsToCheck");
+                CheckInProcedures(oSchema, "FunctionsToCheck");
 
-                //FunctionsToCheck
-                Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views & Source Code", "", "*", 130);
-                ValidateFunctons(oSchema, "FunctionsToCheck");
+                //CheckCreateTableSpace
+                Util.BoxedText("\n", "Checking for CREATE TABLESPACVE in Stored Procedures/Functions", "", "*", 130);
+                CheckInProcedures(oSchema, "CheckCreateTableSpace");
 
+                //CheckKeywords
+                Util.BoxedText("\n", "Checking for MariaDB Spcific Keywords used in MySQL Views/Procedures/Functions", "", "*", 130);
+                CheckInViews(oSchema, "CheckKeywords");
+                CheckInProcedures(oSchema, "CheckKeywords");
+
+                //CheckJsonOperators
+                Util.BoxedText("\n", "Checking for MySQL Spcific JSON Operators `->` & `->>`used in Views/Procedures/Functions", "", "*", 130);
+                CheckInViews(oSchema, "CheckJsonOperators");
+                CheckInProcedures(oSchema, "CheckJsonOperators");
+
+                //CheckJSONSearch, this is not a problem but may need further evaluation
+                Util.BoxedText("\n", "Checking for JSON_SEARCH() function used in Views/Procedures/Functions", "", "*", 130);
+                CheckInViews(oSchema, "CheckJSONSearch");
+                CheckInProcedures(oSchema, "CheckJSONSearch");
+
+                //CheckInnoDBPArtitions, This is not compatible with MariaDB
+                Util.BoxedText("\n", "Checking for MySQL Native Partition which is not compatible with MariaDB", "", "*", 130);
+                CheckInTableScripts(oSchema, "CheckInnoDBPArtitions");
+
+                //CheckFullTextParserPlugin, This is not compatible with MariaDB
+                Util.BoxedText("\n", "Checking FullText Plugins which are not compatible with MariaDB", "", "*", 130);
+                CheckInTableScripts(oSchema, "CheckFullTextParserPlugin");
+                
+                //CheckMaxStatementSourceCode
+                Util.BoxedText("\n", "Checking for Hints in SQL statement that are not compatible with MariaDB", "", "*", 130);
+                CheckInViews(oSchema, "CheckMaxStatementSourceCode");
+                CheckInProcedures(oSchema, "CheckMaxStatementSourceCode");
             }
+
+            //CheckMaxStatementServerVariables
+            Util.BoxedText("", "Checking for Variables Needs to be reviewed as MySQL uses miliseconds vs seconds in MariaDB", "", "*", 130);
+            CheckGlobalVariables(MyDB, "CheckMaxStatementServerVariables");
+
             //SystemVariablesToCheck
             Util.BoxedText("", "Checking for Other MySQL Specific System Variables", "", "*", 130);
-            ValidateServerVariables(MyDB, "SystemVariablesToCheck");
+            CheckGlobalVariables(MyDB, "SystemVariablesToCheck");
 
-            //CheckCreateTableSpace
+            //CheckMySQLXPlugin
+            Util.BoxedText("", "Checking MySQL X Plugin", "", "*", 130);
+            CheckGlobalVariables(MyDB, "CheckMySQLXPlugin");
 
             //SHA256PasswordCheck
             Util.BoxedText("\n", "Checking for SHA256 Plugin based Configuration", "", "*", 130);
-            ValidateServerVariables(MyDB, "SHA256PasswordCheck");
+            CheckGlobalVariables(MyDB, "SHA256PasswordCheck");
             
             //EncryptionParametersToCheck
             Util.BoxedText("", "Checking for Transparent Data Encryption, TDE", "", "*", 130);
-            ValidateServerVariables(MyDB, "EncryptionParametersToCheck");
+            CheckGlobalVariables(MyDB, "EncryptionParametersToCheck");
+
+            //CheckMemCachedPlugin
+            Util.BoxedText("", "Checking for Tables using MemCache", "", "*", 130);
+            CheckBySQL(SourceCon, "CheckMemCachedPlugin");
 
         } catch (Exception e) {
             System.out.println("Error While Processing");
@@ -82,6 +128,7 @@ public class MySQLMain {
     //Validate The Data Types and check against the "DataTypesToCheck"
     private void ValidateDataTypes(SchemaHandler objSchema) {
         boolean bAlert = false;
+        System.out.println("- Views -");
         for (TableHandler Tab : objSchema.getTables()) {
             for (ColumnHandler Col : Tab.getColumnCollection().getColumnList()) {
                 for (String DataType : getListOfValues("DataTypesToCheck")) {
@@ -97,14 +144,43 @@ public class MySQLMain {
         }
     }
     
-    private void ValidateFunctons(SchemaHandler objSchema, String sParam) {
+    private void CheckInTableScripts(SchemaHandler objSchema, String sParam) {
+        boolean bAlert=false;
+        String AdditionalCriteria=Util.getPropertyValue(sParam + ".AND").toLowerCase();
+        for (TableHandler Tab : objSchema.getTables()) {
+            boolean bTableAlert=false;
+            for (String TextToSearch : getListOfValues(sParam)) {
+                if (Tab.getTableScript().toLowerCase().contains(TextToSearch)) {
+                    if (!AdditionalCriteria.isEmpty()) {
+                        if (Tab.getTableScript().toLowerCase().contains(AdditionalCriteria)) {
+                            bTableAlert = true;
+                            bAlert = true;
+                        } else {
+                            bTableAlert = false;
+                        }       
+                    } else {
+                        bTableAlert = true;
+                        bAlert = true;
+                    }
+                }
+                if (bTableAlert) {
+                    System.out.println(Tab.getFullTableName() + " -> [xx] --> This " + Tab.getFullTableName() + " uses `" + TextToSearch + "()` function unsupported by MariaDB!" );
+                }
+            }
+        }
+        if (!bAlert) {
+            System.out.println("No Issues Found...");
+        }
+    }
+
+    private void CheckInViews(SchemaHandler objSchema, String sParam) {
         boolean bAlert=false;
         System.out.println("- Views -");
         for (ViewHandler View : objSchema.getViewsList()) {
-            for (String FunctionName : getListOfValues(sParam)) {
+            for (String TextToSearch : getListOfValues(sParam)) {
                 for (String ViewScript : View.getViewScript()) {
-                    if (ViewScript.toLowerCase().contains(FunctionName)) {
-                        System.out.println(View.getFullViewName() + " -> [xx] --> This view uses `" + FunctionName + "()` function unsupported by MariaDB!" );
+                    if (ViewScript.toLowerCase().contains(TextToSearch)) {
+                        System.out.println(View.getFullViewName() + " -> [xx] --> This view uses `" + TextToSearch + "()` function unsupported by MariaDB!" );
                         bAlert = true;
                     }
                 }
@@ -113,9 +189,11 @@ public class MySQLMain {
         if (!bAlert) {
             System.out.println("No Issues Found...");
         }
-        bAlert = false;
+    }
 
-        System.out.println("\n- Source Code -");
+    private void CheckInProcedures(SchemaHandler objSchema, String sParam) {
+        boolean bAlert=false;
+        System.out.println("- Stored Procedures / Functions -");
         for (SourceCodeHandler srcCode : objSchema.getSourceCodeList()) {
             for (String FunctionName : getListOfValues(sParam)) {
                 for (String strLine : srcCode.getSourceScript()) {
@@ -131,7 +209,7 @@ public class MySQLMain {
         }
     }
 
-    private void ValidateServerVariables(MySQLDatabase oMyDB, String sParam) {
+    private void CheckGlobalVariables(MySQLDatabase oMyDB, String sParam) {
         List<String> KeyVal = new ArrayList<String>();
         boolean bAlert=false;
 
@@ -158,6 +236,31 @@ public class MySQLMain {
         }
     }
 
+    private void CheckBySQL(MySQLConnect SourceCon, String sParam) {
+		Statement StatementObj = null;
+		ResultSet ResultSetObj = null;
+        String SQLScript = Util.getPropertyValue(sParam);
+
+		try {
+			StatementObj = SourceCon.getDBConnection().createStatement();
+            ResultSetObj = StatementObj.executeQuery(SQLScript);
+
+            while (ResultSetObj.next()) {
+                System.out.println(ResultSetObj.getString("resultSet"));
+            }
+		} catch (SQLException e) {
+			System.out.println("*** Failed to Execute: " + SQLScript);
+			e.printStackTrace();
+		} finally {
+            try {
+                if (ResultSetObj != null) { ResultSetObj.close(); }
+                if (StatementObj != null) { StatementObj.close(); }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            } 
+        }       
+    }
+
     private List<String> getListOfValues(String sParam) {
         String sValues = Util.getPropertyValue(sParam);
         List<String> DataValues = new ArrayList<String>();
@@ -167,6 +270,15 @@ public class MySQLMain {
         Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim().toLowerCase());
         if (tmpArr.length > 0) {
             DataValues = Arrays.asList(tmpArr);
+        }
+        int currIndex;
+        //Handle the String Terminators
+        for (String Terminator : StringTerminator) {
+            currIndex=0;
+            for (String itemText : DataValues) {
+                DataValues.set(currIndex, itemText.replace(Terminator, ""));
+                currIndex++;
+            }
         }
         return DataValues;
     }
