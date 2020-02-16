@@ -335,7 +335,7 @@ As a work around, in MariaDB:
 
 ### JSON_SEARCH()
 
-MariaDB 10.3 supports the standard by producing null and a warning for JSON_SEARCH when given invalid data, while MySQL produces an error. 
+MariaDB 10.3 supports the standard by producing null and a warning for JSON_SEARCH when given invalid data, while MySQL produces an error.
 
 This is application specific and needs to be verified in the front-end and back-end application code. Exodus can't evaluate this but Will flag Views, Stored Procedures if JSON_SEARCH() function is used, it's implementation needs to be evaluated manually.
 

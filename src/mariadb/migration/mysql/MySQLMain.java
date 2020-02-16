@@ -42,20 +42,33 @@ public class MySQLMain {
         try {
             //Run Validations
             for (SchemaHandler oSchema : MyDB.getSchemaList()) {
+                //DataTypesToCheck
                 Util.BoxedText("", "Checking for Unsupported Data Types", "", "*", 130);
                 ValidateDataTypes(oSchema);
 
+                //FunctionsToCheck
                 Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views & Source Code", "", "*", 130);
-                ValidateFunctons(oSchema);
+                ValidateFunctons(oSchema, "FunctionsToCheck");
+
+                //FunctionsToCheck
+                Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views & Source Code", "", "*", 130);
+                ValidateFunctons(oSchema, "FunctionsToCheck");
+
             }
+            //SystemVariablesToCheck
+            Util.BoxedText("", "Checking for Other MySQL Specific System Variables", "", "*", 130);
+            ValidateServerVariables(MyDB, "SystemVariablesToCheck");
+
+            //CheckCreateTableSpace
+
+            //SHA256PasswordCheck
             Util.BoxedText("\n", "Checking for SHA256 Plugin based Configuration", "", "*", 130);
             ValidateServerVariables(MyDB, "SHA256PasswordCheck");
-
+            
+            //EncryptionParametersToCheck
             Util.BoxedText("", "Checking for Transparent Data Encryption, TDE", "", "*", 130);
             ValidateServerVariables(MyDB, "EncryptionParametersToCheck");
 
-            Util.BoxedText("", "Checking for Other MySQL Specific System Variables", "", "*", 130);
-            ValidateServerVariables(MyDB, "SystemVariablesToCheck");
         } catch (Exception e) {
             System.out.println("Error While Processing");
             new Logger(LogPath + "/Exodus.err", "Error While Processing - " + e.getMessage(), true);
@@ -83,12 +96,12 @@ public class MySQLMain {
             System.out.println("No Issues Found...");
         }
     }
-
-    private void ValidateFunctons(SchemaHandler objSchema) {
+    
+    private void ValidateFunctons(SchemaHandler objSchema, String sParam) {
         boolean bAlert=false;
         System.out.println("- Views -");
         for (ViewHandler View : objSchema.getViewsList()) {
-            for (String FunctionName : getListOfValues("FunctionsToCheck")) {
+            for (String FunctionName : getListOfValues(sParam)) {
                 for (String ViewScript : View.getViewScript()) {
                     if (ViewScript.toLowerCase().contains(FunctionName)) {
                         System.out.println(View.getFullViewName() + " -> [xx] --> This view uses `" + FunctionName + "()` function unsupported by MariaDB!" );
@@ -104,7 +117,7 @@ public class MySQLMain {
 
         System.out.println("\n- Source Code -");
         for (SourceCodeHandler srcCode : objSchema.getSourceCodeList()) {
-            for (String FunctionName : getListOfValues("FunctionsToCheck")) {
+            for (String FunctionName : getListOfValues(sParam)) {
                 for (String strLine : srcCode.getSourceScript()) {
                     if (strLine.toLowerCase().contains(FunctionName)) {
                         System.out.println(srcCode.getFullObjectName() + " -> [xx] --> This " + srcCode.getSourceType() + " uses `" + FunctionName + "()` function unsupported by MariaDB!" );
