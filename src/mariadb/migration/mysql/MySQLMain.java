@@ -12,6 +12,7 @@ import mariadb.migration.*;
 public class MySQLMain {
     public String LogPath = Util.getPropertyValue("LogPath");
     public List<String> StringTerminator;
+    String ObjectName, ObjectType, Arg1, Arg2;
 
     
     DBCredentialsReader UCR = new DBCredentialsReader("resources/dbdetails.xml");
@@ -51,7 +52,7 @@ public class MySQLMain {
             for (SchemaHandler oSchema : MyDB.getSchemaList()) {
                 //DataTypesToCheck
                 Util.BoxedText("\n", "Checking for Unsupported Data Types in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                ValidateDataTypes(oSchema);
+                ValidateDataTypes(oSchema, "DataTypesToCheck");
 
                 //FunctionsToCheck
                 Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views & Source Code in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
@@ -144,13 +145,40 @@ public class MySQLMain {
     }
 
     //Validate The Data Types and check against the "DataTypesToCheck"
-    private void ValidateDataTypes(SchemaHandler objSchema) {
+    private void ValidateDataTypes(SchemaHandler objSchema, String sParam) {
         boolean bAlert = false;
+        List<String> KeyVal = new ArrayList<String>();
+
+        //Get the related message text for this validation
+        String MessageText = "";
+        String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
+
+        //Reset Tokens
+        ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
+
         for (TableHandler Tab : objSchema.getTables()) {
             for (ColumnHandler Col : Tab.getColumnCollection().getColumnList()) {
                 for (String DataType : getListOfValues("DataTypesToCheck")) {
-                    if (Col.getDataType().toLowerCase().equals(DataType)) {
-                        System.out.println(Tab.getTableName() + "." + Col.getName() + " -> " + Col.getDataType() + "[XX] --> Needs to be altered");
+                    String[] tmpArr = DataType.split(":");
+                    Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim().toLowerCase());
+
+                    if (tmpArr.length > 0) {
+                        KeyVal = Arrays.asList(tmpArr);
+                    } else {
+                        KeyVal.clear();
+                    }
+                    
+                    ObjectName = Tab.getTableName() + "." + Col.getName();
+                    Arg1 = Col.getDataType();
+                    Arg2 = KeyVal.get(1);
+
+                    if (Col.getDataType().toLowerCase().equals(KeyVal.get(0))) {
+                        MessageText = MessageTemplate.
+                                        replace("$OBJECTNAME$", ObjectName).
+                                        replace("$OBJECTTYPE$", ObjectType).
+                                        replace("$ARG1$", Arg1).
+                                        replace("$ARG2$", Arg2);
+                        System.out.println(MessageText);
                         bAlert = true;
                     }
                 }
@@ -161,6 +189,14 @@ public class MySQLMain {
     
     private void CheckInTableScripts(SchemaHandler objSchema, String sParam) {
         boolean bAlert=false;
+
+        //Get the related message text for this validation
+        String MessageText = "";
+        String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
+
+        //Reset Tokens
+        ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
+
         String AdditionalCriteria=Util.getPropertyValue(sParam + ".AND").toLowerCase();
         for (TableHandler Tab : objSchema.getTables()) {
             boolean bTableAlert=false;
@@ -178,8 +214,18 @@ public class MySQLMain {
                         bAlert = true;
                     }
                 }
+
+                ObjectName = Tab.getFullTableName();
+                ObjectType = "Table";
+                Arg1 = TextToSearch;
+
                 if (bTableAlert) {
-                    System.out.println(Tab.getFullTableName() + " -> [xx] --> This " + Tab.getFullTableName() + " uses `" + TextToSearch + "()` function unsupported by MariaDB!" );
+                    MessageText = MessageTemplate.
+                                    replace("$OBJECTNAME$", ObjectName).
+                                    replace("$OBJECTTYPE$", ObjectType).
+                                    replace("$ARG1$", Arg1).
+                                    replace("$ARG2$", Arg2);
+                    System.out.println(MessageText);
                 }
             }
         }
@@ -188,12 +234,29 @@ public class MySQLMain {
 
     private void CheckInViews(SchemaHandler objSchema, String sParam) {
         boolean bAlert=false;
+
+        //Get the related message text for this validation
+        String MessageText = "";
+        String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
+
+        //Reset Tokens
+        ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
+
         System.out.println("- Views -");
         for (ViewHandler View : objSchema.getViewsList()) {
             for (String TextToSearch : getListOfValues(sParam)) {
                 for (String ViewScript : View.getViewScript()) {
                     if (ViewScript.toLowerCase().contains(TextToSearch)) {
-                        System.out.println(View.getFullViewName() + " -> [xx] --> This view uses `" + TextToSearch + "()` function unsupported by MariaDB!" );
+                        ObjectName = View.getFullViewName();
+                        ObjectType = "View";
+                        Arg1 = TextToSearch;
+
+                        MessageText = MessageTemplate.
+                                        replace("$OBJECTNAME$", ObjectName).
+                                        replace("$OBJECTTYPE$", ObjectType).
+                                        replace("$ARG1$", Arg1).
+                                        replace("$ARG2$", Arg2);
+                        System.out.println(MessageText);
                         bAlert = true;
                     }
                 }
@@ -204,12 +267,29 @@ public class MySQLMain {
 
     private void CheckInProcedures(SchemaHandler objSchema, String sParam) {
         boolean bAlert=false;
+
+        //Get the related message text for this validation
+        String MessageText = "";
+        String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
+
+        //Reset Tokens
+        ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
+
         System.out.println("- Stored Procedures & Functions -");
         for (SourceCodeHandler srcCode : objSchema.getSourceCodeList()) {
             for (String FunctionName : getListOfValues(sParam)) {
                 for (String strLine : srcCode.getSourceScript()) {
                     if (strLine.toLowerCase().contains(FunctionName)) {
-                        System.out.println(srcCode.getFullObjectName() + " -> [xx] --> This " + srcCode.getSourceType() + " uses `" + FunctionName + "()` function unsupported by MariaDB!" );
+                        ObjectName = srcCode.getFullObjectName();
+                        ObjectType = srcCode.getSourceType();
+                        Arg1 = FunctionName;
+
+                        MessageText = MessageTemplate.
+                                        replace("$OBJECTNAME$", ObjectName).
+                                        replace("$OBJECTTYPE$", ObjectType).
+                                        replace("$ARG1$", Arg1).
+                                        replace("$ARG2$", Arg2);
+                        System.out.println(MessageText);
                         bAlert = true;
                     }
                 }
@@ -220,12 +300,29 @@ public class MySQLMain {
 
     private void CheckInTriggers(SchemaHandler objSchema, String sParam) {
         boolean bAlert=false;
+
+        //Get the related message text for this validation
+        String MessageText = "";
+        String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
+
+        //Reset Tokens
+        ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
+
         System.out.println("- Triggers -");
         for (TableHandler Tab : objSchema.getTables()) {
             for (String FunctionName : getListOfValues(sParam)) {
                 for (String strLine : Tab.getTriggers()) {
                     if (strLine.toLowerCase().contains(FunctionName)) {
-                        System.out.println(Tab.getFullTableName() + " -> [xx] --> This Table's Trigger uses `" + FunctionName + "()` function unsupported by MariaDB!");
+                        ObjectName = Tab.getFullTableName();
+                        ObjectType = "Table";
+                        Arg1 = FunctionName;
+
+                        MessageText = MessageTemplate.
+                                        replace("$OBJECTNAME$", ObjectName).
+                                        replace("$OBJECTTYPE$", ObjectType).
+                                        replace("$ARG1$", Arg1).
+                                        replace("$ARG2$", Arg2);
+                        System.out.println(MessageText);
                         bAlert = true;
                     }
                 }
@@ -238,19 +335,38 @@ public class MySQLMain {
         List<String> KeyVal = new ArrayList<String>();
         boolean bAlert=false;
 
+        //Get the related message text for this validation
+        String MessageText = "";
+        String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
+
+        //Reset Tokens
+        ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
+
+
         for (GlobalVariables gVars : oMyDB.getServerVariables()) {
             for (String pVar : getListOfValues(sParam)) {
                 String[] tmpArr = pVar.split(":");
                 Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim().toLowerCase());
-                //System.out.println(pVar);
-
+  
                 if (tmpArr.length > 0) {
                     KeyVal = Arrays.asList(tmpArr);
+                } else {
+                    KeyVal.clear();
                 }
-                
+            
                 if (KeyVal.get(0).toString().equals(gVars.getVariableName().toLowerCase())) {
                     if (!KeyVal.get(1).toString().toLowerCase().equals(gVars.getVariableValue().toString().toLowerCase())) {
-                        System.out.println(gVars.getVariableName().toLowerCase() + "(" + gVars.getVariableValue().toString().toLowerCase() + ") Is MySQL specific config & not supported by MariaDB!");
+
+                        ObjectType = "Server Variable";
+                        Arg1 = gVars.getVariableName().toLowerCase();
+                        Arg2 = gVars.getVariableValue().toString().toLowerCase();
+
+                        MessageText = MessageTemplate.
+                                        replace("$OBJECTNAME$", ObjectName).
+                                        replace("$OBJECTTYPE$", ObjectType).
+                                        replace("$ARG1$", Arg1).
+                                        replace("$ARG2$", Arg2);
+                        System.out.println(MessageText);
                         bAlert = true;
                     }
                 }
@@ -264,6 +380,13 @@ public class MySQLMain {
         ResultSet ResultSetObj = null;        
         String SQLScript = Util.getPropertyValue(sParam).replace("?", "'" + objSchema.getSchemaName() + "'");
 
+        //Get the related message text for this validation
+        String MessageText = "";
+        String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
+
+        //Reset Tokens
+        ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
+        
         boolean bAlert=false;
 
 		try {
@@ -272,7 +395,15 @@ public class MySQLMain {
 
             while (ResultSetObj.next()) {
                 bAlert=true;
-                System.out.println(ResultSetObj.getString("resultSet"));
+                ObjectName = ResultSetObj.getString("resultSet");
+                ObjectType = "Table";
+
+                MessageText = MessageTemplate.
+                                replace("$OBJECTNAME$", ObjectName).
+                                replace("$OBJECTTYPE$", ObjectType).
+                                replace("$ARG1$", Arg1).
+                                replace("$ARG2$", Arg2);
+                System.out.println(MessageText);
             }
 
             if (!bAlert) { System.out.println("No Issues Found..."); }

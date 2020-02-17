@@ -74,8 +74,11 @@ public class MySQLSchema implements SchemaHandler {
         String TablesSQL;
         Statement oStatement;
         ResultSet oResultSet;
+        String TablesToMigrate = Util.getPropertyValue("TablesToMigrate");
+
         TablesSQL = "SELECT TABLE_NAME, TABLE_TYPE FROM INFORMATION_SCHEMA.TABLES " +
-        				"WHERE TABLE_SCHEMA='" + SchemaName + "' AND TABLE_TYPE IN ('BASE TABLE', 'VIEW') ORDER BY TABLE_TYPE, TABLE_NAME";
+                        "WHERE TABLE_SCHEMA='" + SchemaName + "' AND TABLE_TYPE IN ('BASE TABLE', 'VIEW') AND " + TablesToMigrate + 
+                        " ORDER BY TABLE_TYPE, TABLE_NAME";
 
         try {
         	oStatement = SourceCon.createStatement();

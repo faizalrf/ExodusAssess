@@ -606,7 +606,7 @@ MySQL's implementation of aborting statements that exceed a certain time to exec
 
 This is not a concern for Migration, its just how statement exceeding timeout are internally handled by the server.
 
-### STATEMENT_STATEMENT_TIME
+### MAX_STATEMENT_TIME
 
 MariaDB 10.3 does not support MySQL's SELECT MAX_STATEMENT_TIME = N ... for MySQL older than 5.7.8 or SELECT /*+ MAX_EXECUTION_TIME(n) */ ... for MySQL 5.7.8 and higher.
 
@@ -614,7 +614,7 @@ The MySQL version of max_statement_time is defined in millseconds, not seconds.
 
 Both of these syntax will be validated using `CheckMaxStatementTime` Exodus config parameter. It will scan the Views, Stored Procedures and Stored Functions and flagged as unsupported. These two parametrers will also be checked in the server config as MySQL uses MiliSeconds for configuration while MariaDB uses Seconds.
 
-### MEMCached Plugin
+### MemCached Plugin
 
 MariaDB 10.3 does not support the MySQL Memcached plugin. However, data stored using memcached can be retrieved because the data is stored as InnoDB tables. MariaDB is able to start successfully with an error message of not being able to find libmemcached.so library.
 
@@ -630,7 +630,7 @@ This is handled by `SHA256PasswordCheck` Exodus config parameter. It will identi
 
 In MySQL, X'HHHH', the standard SQL syntax for binary string literals, erroneously works in the same way as 0xHHHH, which could work as a number or string depending on the context. In MariaDB, this has been fixed to behave as a string in all contexts (and never as a number).
 
-This is not a concern as the behaviour in MariaDB has been fixed.
+This is not a concern as the MySQL behaviour has been fixed in MariaDB.
 
 ### SHOW CREATE TABLE
 
