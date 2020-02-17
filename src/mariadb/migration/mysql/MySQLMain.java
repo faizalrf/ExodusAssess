@@ -44,63 +44,68 @@ public class MySQLMain {
         MySQLDatabase MyDB = new MySQLDatabase(SourceCon.getDBConnection());
         Util.BoxedText("Parsing Completed", "-", 130);
 
-        Util.BoxedText("\n", "Starting Compatibility Check", "", "=", 130);
+        Util.BoxedText("\n", "Starting Compatibility Check For Each Schema/Database", "", "=", 130);
 
         try {
             //Run Validations
             for (SchemaHandler oSchema : MyDB.getSchemaList()) {
                 //DataTypesToCheck
-                Util.BoxedText("", "Checking for Unsupported Data Types", "", "*", 130);
+                Util.BoxedText("\n", "Checking for Unsupported Data Types in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 ValidateDataTypes(oSchema);
 
                 //FunctionsToCheck
-                Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views & Source Code", "", "*", 130);
+                Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views & Source Code in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInViews(oSchema, "FunctionsToCheck");
                 CheckInProcedures(oSchema, "FunctionsToCheck");
 
                 //CheckCreateTableSpace
-                Util.BoxedText("\n", "Checking for CREATE TABLESPACVE in Stored Procedures/Functions", "", "*", 130);
+                Util.BoxedText("\n", "Checking for CREATE TABLESPACVE in Stored Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInProcedures(oSchema, "CheckCreateTableSpace");
 
                 //CheckKeywords
-                Util.BoxedText("\n", "Checking for MariaDB Spcific Keywords used in MySQL Views/Procedures/Functions", "", "*", 130);
+                Util.BoxedText("\n", "Checking for MariaDB Spcific Keywords used in MySQL Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInViews(oSchema, "CheckKeywords");
                 CheckInProcedures(oSchema, "CheckKeywords");
 
                 //CheckJsonOperators
-                Util.BoxedText("\n", "Checking for MySQL Spcific JSON Operators `->` & `->>`used in Views/Procedures/Functions", "", "*", 130);
+                Util.BoxedText("\n", "Checking for MySQL Spcific JSON Operators `->` & `->>`used in Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInViews(oSchema, "CheckJsonOperators");
                 CheckInProcedures(oSchema, "CheckJsonOperators");
 
                 //CheckJSONSearch, this is not a problem but may need further evaluation
-                Util.BoxedText("\n", "Checking for JSON_SEARCH() function used in Views/Procedures/Functions", "", "*", 130);
+                Util.BoxedText("\n", "Checking for JSON_SEARCH() function used in Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInViews(oSchema, "CheckJSONSearch");
                 CheckInProcedures(oSchema, "CheckJSONSearch");
 
                 //CheckInnoDBPArtitions, This is not compatible with MariaDB
-                Util.BoxedText("\n", "Checking for MySQL Native Partition which is not compatible with MariaDB", "", "*", 130);
+                Util.BoxedText("\n", "Checking for MySQL Native Partition which is not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInTableScripts(oSchema, "CheckInnoDBPArtitions");
 
                 //CheckFullTextParserPlugin, This is not compatible with MariaDB
-                Util.BoxedText("\n", "Checking FullText Plugins which are not compatible with MariaDB", "", "*", 130);
+                Util.BoxedText("\n", "Checking FullText Plugins which are not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInTableScripts(oSchema, "CheckFullTextParserPlugin");
                 
                 //CheckMaxStatementSourceCode
-                Util.BoxedText("\n", "Checking for Hints in SQL statement that are not compatible with MariaDB", "", "*", 130);
+                Util.BoxedText("\n", "Checking for Hints in SQL statement that are not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInViews(oSchema, "CheckMaxStatementSourceCode");
                 CheckInProcedures(oSchema, "CheckMaxStatementSourceCode");
+
+                //CheckMemCachedPlugin
+                Util.BoxedText("\n", "Checking for Tables using MemCache in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
+                CheckBySQL(SourceCon, oSchema, "CheckMemCachedPlugin");
             }
+            Util.BoxedText("\n\n", "Starting Compatibility Check Using Global Scope", "", "=", 130);
 
             //CheckMaxStatementServerVariables
             Util.BoxedText("", "Checking for Variables Needs to be reviewed as MySQL uses miliseconds vs seconds in MariaDB", "", "*", 130);
             CheckGlobalVariables(MyDB, "CheckMaxStatementServerVariables");
 
             //SystemVariablesToCheck
-            Util.BoxedText("", "Checking for Other MySQL Specific System Variables", "", "*", 130);
+            Util.BoxedText("\n", "Checking for Other MySQL Specific System Variables", "", "*", 130);
             CheckGlobalVariables(MyDB, "SystemVariablesToCheck");
 
             //CheckMySQLXPlugin
-            Util.BoxedText("", "Checking MySQL X Plugin", "", "*", 130);
+            Util.BoxedText("\n", "Checking MySQL X Plugin", "", "*", 130);
             CheckGlobalVariables(MyDB, "CheckMySQLXPlugin");
 
             //SHA256PasswordCheck
@@ -108,12 +113,8 @@ public class MySQLMain {
             CheckGlobalVariables(MyDB, "SHA256PasswordCheck");
             
             //EncryptionParametersToCheck
-            Util.BoxedText("", "Checking for Transparent Data Encryption, TDE", "", "*", 130);
+            Util.BoxedText("\n", "Checking for Transparent Data Encryption, TDE", "", "*", 130);
             CheckGlobalVariables(MyDB, "EncryptionParametersToCheck");
-
-            //CheckMemCachedPlugin
-            Util.BoxedText("", "Checking for Tables using MemCache", "", "*", 130);
-            CheckBySQL(SourceCon, "CheckMemCachedPlugin");
 
         } catch (Exception e) {
             System.out.println("Error While Processing");
@@ -128,7 +129,6 @@ public class MySQLMain {
     //Validate The Data Types and check against the "DataTypesToCheck"
     private void ValidateDataTypes(SchemaHandler objSchema) {
         boolean bAlert = false;
-        System.out.println("- Views -");
         for (TableHandler Tab : objSchema.getTables()) {
             for (ColumnHandler Col : Tab.getColumnCollection().getColumnList()) {
                 for (String DataType : getListOfValues("DataTypesToCheck")) {
@@ -139,9 +139,7 @@ public class MySQLMain {
                 }
             }
         }
-        if (!bAlert) {
-            System.out.println("No Issues Found...");
-        }
+        if (!bAlert) { System.out.println("No Issues Found..."); }
     }
     
     private void CheckInTableScripts(SchemaHandler objSchema, String sParam) {
@@ -168,9 +166,7 @@ public class MySQLMain {
                 }
             }
         }
-        if (!bAlert) {
-            System.out.println("No Issues Found...");
-        }
+        if (!bAlert) { System.out.println("No Issues Found..."); }
     }
 
     private void CheckInViews(SchemaHandler objSchema, String sParam) {
@@ -186,9 +182,7 @@ public class MySQLMain {
                 }
             }
         }
-        if (!bAlert) {
-            System.out.println("No Issues Found...");
-        }
+        if (!bAlert) { System.out.println("No Issues Found..."); }
     }
 
     private void CheckInProcedures(SchemaHandler objSchema, String sParam) {
@@ -204,9 +198,7 @@ public class MySQLMain {
                 }
             }
         }
-        if (!bAlert) {
-            System.out.println("No Issues Found...");
-        }
+        if (!bAlert) { System.out.println("No Issues Found..."); }
     }
 
     private void CheckGlobalVariables(MySQLDatabase oMyDB, String sParam) {
@@ -231,23 +223,26 @@ public class MySQLMain {
                 }
             }
         }
-        if (!bAlert) {
-            System.out.println("No Issues Found...");
-        }
+        if (!bAlert) { System.out.println("No Issues Found..."); }
     }
 
-    private void CheckBySQL(MySQLConnect SourceCon, String sParam) {
+    private void CheckBySQL(MySQLConnect SourceCon, SchemaHandler objSchema, String sParam) {
 		Statement StatementObj = null;
-		ResultSet ResultSetObj = null;
-        String SQLScript = Util.getPropertyValue(sParam);
+        ResultSet ResultSetObj = null;        
+        String SQLScript = Util.getPropertyValue(sParam).replace("?", "'" + objSchema.getSchemaName() + "'");
+
+        boolean bAlert=false;
 
 		try {
 			StatementObj = SourceCon.getDBConnection().createStatement();
             ResultSetObj = StatementObj.executeQuery(SQLScript);
 
             while (ResultSetObj.next()) {
+                bAlert=true;
                 System.out.println(ResultSetObj.getString("resultSet"));
             }
+
+            if (!bAlert) { System.out.println("No Issues Found..."); }
 		} catch (SQLException e) {
 			System.out.println("*** Failed to Execute: " + SQLScript);
 			e.printStackTrace();

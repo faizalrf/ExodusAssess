@@ -53,13 +53,21 @@ Assessment Path: database3
 ==================================================================================================================================
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~ Starting `test` DB Schema Discovery                                                                                            ~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Parsing `test`.`demo_test`                                                           --> COLUMNS [  5] -->  ROWS [              1]
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~ Starting `world` DB Schema Discovery                                                                                           ~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Parsing `world`.`articles`                                                           --> COLUMNS [  3] -->  ROWS [              0]
 Parsing `world`.`City`                                                               --> COLUMNS [  5] -->  ROWS [          4,079]
 Parsing `world`.`Country`                                                            --> COLUMNS [ 15] -->  ROWS [            239]
 Parsing `world`.`CountryLanguage`                                                    --> COLUMNS [  4] -->  ROWS [            984]
+Parsing `world`.`details`                                                            --> COLUMNS [  3] -->  ROWS [              0]
 Parsing `world`.`j_data`                                                             --> COLUMNS [  3] -->  ROWS [              2]
 Parsing `world`.`posts`                                                              --> COLUMNS [  3] -->  ROWS [              0]
+Parsing `world`.`t`                                                                  --> COLUMNS [  2] -->  ROWS [              0]
 Reading View Script `world`.`v_dummy`                                                --> [ OK ]
 Reading View Script `world`.`v_test`                                                 --> [ OK ]
 Reading PROCEDURE Script `world`.`my_procedure_Local_Variables`                      --> [ OK ]
@@ -70,41 +78,205 @@ Reading PROCEDURE Script `world`.`my_procedure_Local_Variables`                 
 
 
 ==================================================================================================================================
-= Starting Compatibility Check                                                                                                   =
+= Starting Compatibility Check For Each Schema/Database                                                                          =
 ==================================================================================================================================
 
 **********************************************************************************************************************************
-* Checking for Unsupported Data Types                                                                                            *
+* Checking for Unsupported Data Types in `test` database                                                                         *
+**********************************************************************************************************************************
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for MySQL Specific Functions in Views & Source Code in `test` database                                                *
+**********************************************************************************************************************************
+- Views -
+No Issues Found...
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for CREATE TABLESPACVE in Stored Procedures/Functions in `test` database                                              *
+**********************************************************************************************************************************
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for MariaDB Spcific Keywords used in MySQL Views/Procedures/Functions in `test` database                              *
+**********************************************************************************************************************************
+- Views -
+No Issues Found...
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for MySQL Specific Functions in Views & Source Code in `test` database                                                *
+**********************************************************************************************************************************
+- Views -
+No Issues Found...
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for CREATE TABLESPACVE in Stored Procedures/Functions in `test` database                                              *
+**********************************************************************************************************************************
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for MariaDB Spcific Keywords used in MySQL Views/Procedures/Functions in `test` database                              *
+**********************************************************************************************************************************
+- Views -
+No Issues Found...
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for MySQL Spcific JSON Operators `->` & `->>`used in Views/Procedures/Functions in `test` database                    *
+**********************************************************************************************************************************
+- Views -
+No Issues Found...
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for JSON_SEARCH() function used in Views/Procedures/Functions in `test` database                                      *
+**********************************************************************************************************************************
+- Views -
+No Issues Found...
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for MySQL Native Partition which is not compatible with MariaDB in `test` database                                    *
+**********************************************************************************************************************************
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking FullText Plugins which are not compatible with MariaDB in `test` database                                             *
+**********************************************************************************************************************************
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for Hints in SQL statement that are not compatible with MariaDB in `test` database                                    *
+**********************************************************************************************************************************
+- Views -
+No Issues Found...
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+
+**********************************************************************************************************************************
+* Checking for Tables using MemCache in `test` database                                                                          *
+**********************************************************************************************************************************
+`test`.`demo_test`
+
+
+**********************************************************************************************************************************
+* Checking for Unsupported Data Types in `world` database                                                                        *
 **********************************************************************************************************************************
 j_data.c1 -> json[XX] --> Needs to be altered
-j_data.c2 -> text[XX] --> Needs to be altered
-posts.body -> text[XX] --> Needs to be altered
 
 
 **********************************************************************************************************************************
-* Checking for MySQL Specific Functions in Views & Source Code                                                                   *
+* Checking for MySQL Specific Functions in Views & Source Code in `world` database                                               *
 **********************************************************************************************************************************
 - Views -
 `world`.`v_dummy` -> [xx] --> This view uses `wait_for_executed_gtid_set()` function unsupported by MariaDB!
 `world`.`v_test` -> [xx] --> This view uses `wait_for_executed_gtid_set()` function unsupported by MariaDB!
 `world`.`v_test` -> [xx] --> This view uses `distance()` function unsupported by MariaDB!
 `world`.`v_test` -> [xx] --> This view uses `st_distance()` function unsupported by MariaDB!
-
-- Source Code -
+- Stored Procedures / Functions -
 `world`.`my_procedure_Local_Variables` -> [xx] --> This PROCEDURE uses `gtid_subtract()` function unsupported by MariaDB!
 `world`.`my_procedure_Local_Variables` -> [xx] --> This PROCEDURE uses `distance()` function unsupported by MariaDB!
 `world`.`my_procedure_Local_Variables` -> [xx] --> This PROCEDURE uses `st_distance()` function unsupported by MariaDB!
 
 
 **********************************************************************************************************************************
-* Checking for SHA256 Plugin based Configuration                                                                                 *
+* Checking for CREATE TABLESPACVE in Stored Procedures/Functions in `world` database                                             *
 **********************************************************************************************************************************
-default_authentication_plugin(sha256_password) Is MySQL specific config & not supported by MariaDB!
+- Stored Procedures / Functions -
+No Issues Found...
+
 
 **********************************************************************************************************************************
-* Checking for Transparent Data Encryption, TDE                                                                                  *
+* Checking for MariaDB Spcific Keywords used in MySQL Views/Procedures/Functions in `world` database                             *
+**********************************************************************************************************************************
+- Views -
+No Issues Found...
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for MySQL Spcific JSON Operators `->` & `->>`used in Views/Procedures/Functions in `world` database                   *
+**********************************************************************************************************************************
+- Views -
+No Issues Found...
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for JSON_SEARCH() function used in Views/Procedures/Functions in `world` database                                     *
+**********************************************************************************************************************************
+- Views -
+No Issues Found...
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for MySQL Native Partition which is not compatible with MariaDB in `world` database                                   *
 **********************************************************************************************************************************
 No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking FullText Plugins which are not compatible with MariaDB in `world` database                                            *
+**********************************************************************************************************************************
+`world`.`articles` -> [xx] --> This `world`.`articles` uses `with parser `mecab`()` function unsupported by MariaDB!
+`world`.`details` -> [xx] --> This `world`.`details` uses `with parser `mecab`()` function unsupported by MariaDB!
+`world`.`posts` -> [xx] --> This `world`.`posts` uses `with parser `ngram`()` function unsupported by MariaDB!
+`world`.`posts` -> [xx] --> This `world`.`posts` uses `with parser `mecab`()` function unsupported by MariaDB!
+
+
+**********************************************************************************************************************************
+* Checking for Hints in SQL statement that are not compatible with MariaDB in `world` database                                   *
+**********************************************************************************************************************************
+- Views -
+No Issues Found...
+- Stored Procedures / Functions -
+No Issues Found...
+
+
+
+**********************************************************************************************************************************
+* Checking for Tables using MemCache in `world` database                                                                         *
+**********************************************************************************************************************************
+No Issues Found...
+
+
+==================================================================================================================================
+= Starting Compatibility Check Using Global Scope                                                                                =
+==================================================================================================================================
+
+**********************************************************************************************************************************
+* Checking for Variables Needs to be reviewed as MySQL uses miliseconds vs seconds in MariaDB                                    *
+**********************************************************************************************************************************
+No Issues Found...
+
 
 **********************************************************************************************************************************
 * Checking for Other MySQL Specific System Variables                                                                             *
@@ -112,7 +284,23 @@ No Issues Found...
 No Issues Found...
 
 
-Report is generated in the JSON format under /../ExodusAssess/bin/export, named by each of the given database names given.
+**********************************************************************************************************************************
+* Checking MySQL X Plugin                                                                                                        *
+**********************************************************************************************************************************
+No Issues Found...
+
+
+**********************************************************************************************************************************
+* Checking for SHA256 Plugin based Configuration                                                                                 *
+**********************************************************************************************************************************
+default_authentication_plugin(sha256_password) Is MySQL specific config & not supported by MariaDB!
+
+
+**********************************************************************************************************************************
+* Checking for Transparent Data Encryption, TDE                                                                                  *
+**********************************************************************************************************************************
+No Issues Found...
+
 
 ##################################################################################################################################
 # Compatibility Check Completed...                                                                                               #
