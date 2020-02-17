@@ -56,26 +56,40 @@ public class MySQLMain {
                 //FunctionsToCheck
                 Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views & Source Code in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInViews(oSchema, "FunctionsToCheck");
+                System.out.println();
                 CheckInProcedures(oSchema, "FunctionsToCheck");
+                System.out.println();
+                CheckInTriggers(oSchema, "CheckMaxStatementSourceCode");
 
                 //CheckCreateTableSpace
                 Util.BoxedText("\n", "Checking for CREATE TABLESPACVE in Stored Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInProcedures(oSchema, "CheckCreateTableSpace");
+                System.out.println();
+                CheckInTriggers(oSchema, "CheckMaxStatementSourceCode");
 
                 //CheckKeywords
                 Util.BoxedText("\n", "Checking for MariaDB Spcific Keywords used in MySQL Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInViews(oSchema, "CheckKeywords");
+                System.out.println();
                 CheckInProcedures(oSchema, "CheckKeywords");
+                System.out.println();
+                CheckInTriggers(oSchema, "CheckMaxStatementSourceCode");
 
                 //CheckJsonOperators
                 Util.BoxedText("\n", "Checking for MySQL Spcific JSON Operators `->` & `->>`used in Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInViews(oSchema, "CheckJsonOperators");
+                System.out.println();
                 CheckInProcedures(oSchema, "CheckJsonOperators");
+                System.out.println();
+                CheckInTriggers(oSchema, "CheckMaxStatementSourceCode");
 
                 //CheckJSONSearch, this is not a problem but may need further evaluation
                 Util.BoxedText("\n", "Checking for JSON_SEARCH() function used in Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInViews(oSchema, "CheckJSONSearch");
+                System.out.println();
                 CheckInProcedures(oSchema, "CheckJSONSearch");
+                System.out.println();
+                CheckInTriggers(oSchema, "CheckMaxStatementSourceCode");
 
                 //CheckInnoDBPArtitions, This is not compatible with MariaDB
                 Util.BoxedText("\n", "Checking for MySQL Native Partition which is not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
@@ -88,7 +102,10 @@ public class MySQLMain {
                 //CheckMaxStatementSourceCode
                 Util.BoxedText("\n", "Checking for Hints in SQL statement that are not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInViews(oSchema, "CheckMaxStatementSourceCode");
+                System.out.println();
                 CheckInProcedures(oSchema, "CheckMaxStatementSourceCode");
+                System.out.println();
+                CheckInTriggers(oSchema, "CheckMaxStatementSourceCode");
 
                 //CheckMemCachedPlugin
                 Util.BoxedText("\n", "Checking for Tables using MemCache in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
@@ -187,12 +204,28 @@ public class MySQLMain {
 
     private void CheckInProcedures(SchemaHandler objSchema, String sParam) {
         boolean bAlert=false;
-        System.out.println("- Stored Procedures / Functions -");
+        System.out.println("- Stored Procedures & Functions -");
         for (SourceCodeHandler srcCode : objSchema.getSourceCodeList()) {
             for (String FunctionName : getListOfValues(sParam)) {
                 for (String strLine : srcCode.getSourceScript()) {
                     if (strLine.toLowerCase().contains(FunctionName)) {
                         System.out.println(srcCode.getFullObjectName() + " -> [xx] --> This " + srcCode.getSourceType() + " uses `" + FunctionName + "()` function unsupported by MariaDB!" );
+                        bAlert = true;
+                    }
+                }
+            }
+        }
+        if (!bAlert) { System.out.println("No Issues Found..."); }
+    }
+
+    private void CheckInTriggers(SchemaHandler objSchema, String sParam) {
+        boolean bAlert=false;
+        System.out.println("- Triggers -");
+        for (TableHandler Tab : objSchema.getTables()) {
+            for (String FunctionName : getListOfValues(sParam)) {
+                for (String strLine : Tab.getTriggers()) {
+                    if (strLine.toLowerCase().contains(FunctionName)) {
+                        System.out.println(Tab.getFullTableName() + " -> [xx] --> This Table's Trigger uses `" + FunctionName + "()` function unsupported by MariaDB!");
                         bAlert = true;
                     }
                 }
