@@ -92,7 +92,11 @@ No Issues Found...
 **********************************************************************************************************************************
 - Views -
 No Issues Found...
-- Stored Procedures / Functions -
+
+- Stored Procedures & Functions -
+No Issues Found...
+
+- Triggers -
 No Issues Found...
 
 
@@ -102,13 +106,20 @@ No Issues Found...
 - Stored Procedures / Functions -
 No Issues Found...
 
+- Triggers -
+No Issues Found...
+
 
 **********************************************************************************************************************************
 * Checking for MariaDB Spcific Keywords used in MySQL Views/Procedures/Functions in `test` database                              *
 **********************************************************************************************************************************
 - Views -
 No Issues Found...
-- Stored Procedures / Functions -
+
+- Stored Procedures & Functions -
+No Issues Found...
+
+- Triggers -
 No Issues Found...
 
 
@@ -117,7 +128,11 @@ No Issues Found...
 **********************************************************************************************************************************
 - Views -
 No Issues Found...
-- Stored Procedures / Functions -
+
+- Stored Procedures & Functions -
+No Issues Found...
+
+- Triggers -
 No Issues Found...
 
 
@@ -127,13 +142,20 @@ No Issues Found...
 - Stored Procedures / Functions -
 No Issues Found...
 
+- Triggers -
+No Issues Found...
+
 
 **********************************************************************************************************************************
 * Checking for MariaDB Spcific Keywords used in MySQL Views/Procedures/Functions in `test` database                              *
 **********************************************************************************************************************************
 - Views -
 No Issues Found...
-- Stored Procedures / Functions -
+
+- Stored Procedures & Functions -
+No Issues Found...
+
+- Triggers -
 No Issues Found...
 
 
@@ -142,7 +164,11 @@ No Issues Found...
 **********************************************************************************************************************************
 - Views -
 No Issues Found...
-- Stored Procedures / Functions -
+
+- Stored Procedures & Functions -
+No Issues Found...
+
+- Triggers -
 No Issues Found...
 
 
@@ -151,7 +177,11 @@ No Issues Found...
 **********************************************************************************************************************************
 - Views -
 No Issues Found...
-- Stored Procedures / Functions -
+
+- Stored Procedures & Functions -
+No Issues Found...
+
+- Triggers -
 No Issues Found...
 
 
@@ -172,7 +202,11 @@ No Issues Found...
 **********************************************************************************************************************************
 - Views -
 No Issues Found...
-- Stored Procedures / Functions -
+
+- Stored Procedures & Functions -
+No Issues Found...
+
+- Triggers -
 No Issues Found...
 
 
@@ -206,7 +240,10 @@ j_data.c1 -> json[XX] --> Needs to be altered
 **********************************************************************************************************************************
 * Checking for CREATE TABLESPACVE in Stored Procedures/Functions in `world` database                                             *
 **********************************************************************************************************************************
-- Stored Procedures / Functions -
+- Stored Procedures & Functions -
+No Issues Found...
+
+- Triggers -
 No Issues Found...
 
 
@@ -215,7 +252,11 @@ No Issues Found...
 **********************************************************************************************************************************
 - Views -
 No Issues Found...
-- Stored Procedures / Functions -
+
+- Stored Procedures & Functions -
+No Issues Found...
+
+- Triggers -
 No Issues Found...
 
 
@@ -224,7 +265,11 @@ No Issues Found...
 **********************************************************************************************************************************
 - Views -
 No Issues Found...
-- Stored Procedures / Functions -
+
+- Stored Procedures & Functions -
+No Issues Found...
+
+- Triggers -
 No Issues Found...
 
 
@@ -233,7 +278,11 @@ No Issues Found...
 **********************************************************************************************************************************
 - Views -
 No Issues Found...
-- Stored Procedures / Functions -
+
+- Stored Procedures & Functions -
+No Issues Found...
+
+- Triggers -
 No Issues Found...
 
 
@@ -257,7 +306,11 @@ No Issues Found...
 **********************************************************************************************************************************
 - Views -
 No Issues Found...
-- Stored Procedures / Functions -
+
+- Stored Procedures & Functions -
+No Issues Found...
+
+- Triggers -
 No Issues Found...
 
 
