@@ -11,6 +11,8 @@ The executable script is the Java class file `ExodusAssess.class` which takes on
 
 The `resources/dbdetails.xml` has the following contents, this sample has three database servers defined with their user accounts and passwords. 
 
+**Note:** _The accounts configured in the XML file must have "ALL" privilege as it needs to scan all the tables/objects including global variables/schema spacific objetcs and execute "SHOW" commands for various objects_
+
 ```
 <?xml version="1.1"?>
 <DataSources>
