@@ -3,7 +3,7 @@
 		"Server": "1",
 		"IP": "192.158.56.101",
         "PORT": "3306",
-        "AssmentScore": 0,
+        "AssmentScore": 6,
 		"SchemaAssessmentReport":
         [
             {
@@ -15,13 +15,6 @@
                         [
                             { "id": "1", "table": "orders", "column_name": "order_detail", "datatype": "JSON" },
                             { "id": "2", "table": "payments", "column_name": "paument_detail", "datatype": "JSON" }
-                        ]
-                    },
-                    {
-                        "UnSupportedVariables":
-                        [
-                            { "id": "1", "variable_name": "variable1", "value": "val1", "default": "def1" },
-                            { "id": "2", "table": "variable2", "column_name": "val2", "datatype": "def2" }
                         ]
                     }
                 ]
@@ -44,8 +37,7 @@
             {
                 "UnSupportedVariables":
                 [
-                    { "id": "1", "variable_name": "variable1", "value": "val1", "default": "def1" },
-                    { "id": "2", "table": "variable2", "column_name": "val2", "datatype": "def2" }
+                    { "id": "1", "variable_name": "variable1", "value": "val1", "default": "def1" }
                 ]
             },
             {
