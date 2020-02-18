@@ -7,14 +7,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import mariadb.migration.*;
 
 public class MySQLMain {
     public String LogPath = Util.getPropertyValue("LogPath");
+    public String ReportPath = Util.getPropertyValue("ReportPath");
+    String FolderSeparator = Util.getPropertyValue("FolderSeparator");
+
     public List<String> StringTerminator;
     String ObjectName, ObjectType, Arg1, Arg2;
 
-    
+    public Logger JSON_Log = new Logger(ReportPath + FolderSeparator + "assessment_report.json");
+        
     DBCredentialsReader UCR = new DBCredentialsReader("resources/dbdetails.xml");
     
     //Specific Database Source Execution and/or ALL
@@ -141,6 +149,7 @@ public class MySQLMain {
         } finally {
             SourceCon.DisconnectDB();
             Util.BoxedText("\n", "Compatibility Check Completed...", "", "#", 130);
+            System.out.println("\nJSON Report is available in [" + ReportPath + "]");
         }
     }
 
@@ -162,12 +171,13 @@ public class MySQLMain {
                     String[] tmpArr = DataType.split(":");
                     Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim().toLowerCase());
 
-                    if (tmpArr.length > 0) {
-                        KeyVal = Arrays.asList(tmpArr);
-                    } else {
-                        KeyVal.clear();
+                    //Nothing to compare, continue back to the top of the loop
+                    if (tmpArr.length <= 0) {
+                        continue;
                     }
-                    
+
+                    KeyVal = Arrays.asList(tmpArr);
+
                     ObjectName = Tab.getTableName() + "." + Col.getName();
                     Arg1 = Col.getDataType();
                     Arg2 = KeyVal.get(1);
@@ -251,6 +261,7 @@ public class MySQLMain {
                         ObjectType = "View";
                         Arg1 = TextToSearch;
 
+                        //Set the Message Output
                         MessageText = MessageTemplate.
                                         replace("$OBJECTNAME$", ObjectName).
                                         replace("$OBJECTTYPE$", ObjectType).
@@ -348,12 +359,13 @@ public class MySQLMain {
                 String[] tmpArr = pVar.split(":");
                 Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim().toLowerCase());
   
-                if (tmpArr.length > 0) {
-                    KeyVal = Arrays.asList(tmpArr);
-                } else {
-                    KeyVal.clear();
+                //Nothing to compare, continue back to the top of the loop
+                if (tmpArr.length <= 0) {
+                    continue;
                 }
-            
+
+                KeyVal = Arrays.asList(tmpArr);
+
                 if (KeyVal.get(0).toString().equals(gVars.getVariableName().toLowerCase())) {
                     if (!KeyVal.get(1).toString().toLowerCase().equals(gVars.getVariableValue().toString().toLowerCase())) {
 
@@ -440,5 +452,26 @@ public class MySQLMain {
             }
         }
         return DataValues;
+    }
+
+    //Test Method
+    private void JSONWriterTest() {
+        JSONObject employeeDetails = new JSONObject();
+        JSONObject employeeDetails2 = new JSONObject();
+
+        try {
+            employeeDetails.put("Key1", "Value Super Smooth 1");
+            employeeDetails.put("Key2", "Value Super Smooth 2");
+            employeeDetails.put("Key3", "Value Super Smooth 3");
+            employeeDetails2.put("Key1", "Value Super Smooth x1");
+            employeeDetails2.put("Key2", "Value Super Smooth x2");
+            JSONArray ja = new JSONArray();
+            ja.put(employeeDetails);
+            ja.put(employeeDetails2);
+
+            System.out.println(ja.toString());
+        } catch (JSONException jex) {
+            System.out.println(jex.getMessage());
+        }        
     }
 }
