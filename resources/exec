@@ -1,9 +1,27 @@
+DatabaseName=$1
+
+if [ "$#" -ne 1 ]; then
+    echo ""
+    echo "Illegal number of arguments passed"
+    echo ""
+    echo "Usage:"
+    echo "    shell> ./exec ALL"
+    echo "The above will process all the databases configured in the resources/dbdetails.xml"
+    echo ""
+    echo "- or -"
+    echo ""
+    echo "    shell> ./exec database3"
+    echo "The above will process only database3 as defined in the resources/dbdetails.xml"
+    echo ""
+    exit 1
+fi
+
 CLASSPATH=
-export CLASSPATH=.:/home/faisal/Work/Java/Exodus/resources/mariadb-java-client-2.4.1.jar
+export CLASSPATH=.:/home/faisal/Work/Java/ExodusAssess/resources/mariadb-java-client-2.4.1.jar::/home/faisal/Work/Java/ExodusAssess/resources/java-json.jar
 clear
 
 mkdir -p resources
 
 cp *.jar *.xml *.properties resources
 
-java -Xms4196m -Xmx10240m mariadb.migration.Exodus
+java -Xms1024m -Xmx2048m mariadb.migration.ExodusAssess ${DatabaseName}

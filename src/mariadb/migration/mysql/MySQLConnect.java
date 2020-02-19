@@ -22,7 +22,7 @@ public class MySQLConnect implements DBConHandler {
     private DataSources UC;
     private Connection dbConnection = null;
 
-    public MySQLConnect(String iConnectionName) {
+    public MySQLConnect(String iConnectionName) throws SQLException {
         UC = new DataSources();
         ConnectionName = iConnectionName;
         
@@ -39,12 +39,16 @@ public class MySQLConnect implements DBConHandler {
         dbUserName = UC.getUserName();
         dbPassword = UC.getPassword();
         dbUrl=Util.getPropertyValue("SourceConnectPrefix") + hostName + ":" + portNumber.toString() + "/" + dbName + "?" + Util.getPropertyValue("SourceConnectParams");
-        dbConnection = ConnectDB();
+        try {
+            dbConnection = ConnectDB();
+        } catch (SQLException ex) {
+            throw new SQLException ("Failed to connect to the Database!");
+        }
     }
 
     public Connection getDBConnection() { return dbConnection; }
 
-    public Connection ConnectDB() {
+    public Connection ConnectDB() throws SQLException {
         try {
             dbConnection = DriverManager.getConnection(dbUrl, dbUserName, dbPassword);
             dbConnection.setAutoCommit(false);
@@ -55,6 +59,7 @@ public class MySQLConnect implements DBConHandler {
             System.out.println("Unable to connect to : " + ConnectionName + " -> " + dbUrl);
             e.printStackTrace();
             System.out.println("- END -");
+            throw new SQLException("Error While Connecting to the Database");
         }
         return dbConnection;
     }

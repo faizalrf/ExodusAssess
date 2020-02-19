@@ -39,23 +39,31 @@ public class MySQLMain {
 
         for (DataSources DC : UCR.DBCredentialsList()) {
             if (DC.getDBType().toLowerCase().equals(strSourceDB) || strSourceDB.equals("all")) {
-                StartExodusAssess(DC);
+                try {
+                    StartExodusAssess(DC);
+                } catch (Exception ex) {
+                    Util.BoxedText("\n\n", "Error while processing database `" + DC.getDBType() + "@" + DC.getHostName() + "`", "\n\n", "!", 130);
+                }
             }
         }
         System.out.println("\n\n");
     }
 
-    public void StartExodusAssess(DataSources oDataSource) {
-        //Read The Database
-        MySQLConnect SourceCon = new MySQLConnect(oDataSource.getDBType());
-        Util.BoxedText("Current Server: " + oDataSource.getHostName(), "=", 130);
-
-        MySQLDatabase MyDB = new MySQLDatabase(SourceCon.getDBConnection());
-        Util.BoxedText("Parsing Completed", "-", 130);
-
-        Util.BoxedText("\n", "Starting Compatibility Check For Each Schema/Database", "", "=", 130);
-
+    public void StartExodusAssess(DataSources oDataSource) throws Exception {
+        MySQLConnect SourceCon = null;
+        MySQLDatabase MyDB = null;
+        //Begin the Assessmentv
         try {
+            //Initiate a new connection to MySQL server
+            SourceCon = new MySQLConnect(oDataSource.getDBType());
+            Util.BoxedText("Current Server: " + oDataSource.getHostName(), "=", 130);
+    
+            //Read The Database structure and objects
+            MyDB = new MySQLDatabase(SourceCon.getDBConnection());
+            Util.BoxedText("Parsing Completed", "-", 130);
+    
+            Util.BoxedText("\n", "Starting Compatibility Check For Each Schema/Database", "", "=", 130);
+
             //Run Validations
             for (SchemaHandler oSchema : MyDB.getSchemaList()) {
                 //DataTypesToCheck
@@ -146,6 +154,7 @@ public class MySQLMain {
             System.out.println("Error While Processing");
             new Logger(LogPath + "/Exodus.err", "Error While Processing - " + e.getMessage(), true);
             e.printStackTrace();
+            throw new Exception("Errors while processing database!");
         } finally {
             SourceCon.DisconnectDB();
             Util.BoxedText("\n", "Compatibility Check Completed...", "", "#", 130);
