@@ -76,13 +76,13 @@ public class MySQLMain {
                 System.out.println();
                 CheckInProcedures(oSchema, "FunctionsToCheck");
                 System.out.println();
-                CheckInTriggers(oSchema, "CheckMaxStatementSourceCode");
+                CheckInTriggers(oSchema, "FunctionsToCheck");
 
                 //CheckCreateTableSpace
                 Util.BoxedText("\n", "Checking for CREATE TABLESPACVE in Stored Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInProcedures(oSchema, "CheckCreateTableSpace");
                 System.out.println();
-                CheckInTriggers(oSchema, "CheckMaxStatementSourceCode");
+                CheckInTriggers(oSchema, "CheckCreateTableSpace");
 
                 //CheckKeywords
                 Util.BoxedText("\n", "Checking for MariaDB Spcific Keywords used in MySQL Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
@@ -90,7 +90,7 @@ public class MySQLMain {
                 System.out.println();
                 CheckInProcedures(oSchema, "CheckKeywords");
                 System.out.println();
-                CheckInTriggers(oSchema, "CheckMaxStatementSourceCode");
+                CheckInTriggers(oSchema, "CheckKeywords");
 
                 //CheckJsonOperators
                 Util.BoxedText("\n", "Checking for MySQL Spcific JSON Operators `->` & `->>`used in Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
@@ -98,7 +98,7 @@ public class MySQLMain {
                 System.out.println();
                 CheckInProcedures(oSchema, "CheckJsonOperators");
                 System.out.println();
-                CheckInTriggers(oSchema, "CheckMaxStatementSourceCode");
+                CheckInTriggers(oSchema, "CheckJsonOperators");
 
                 //CheckJSONSearch, this is not a problem but may need further evaluation
                 Util.BoxedText("\n", "Checking for JSON_SEARCH() function used in Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
@@ -106,7 +106,7 @@ public class MySQLMain {
                 System.out.println();
                 CheckInProcedures(oSchema, "CheckJSONSearch");
                 System.out.println();
-                CheckInTriggers(oSchema, "CheckMaxStatementSourceCode");
+                CheckInTriggers(oSchema, "CheckJSONSearch");
 
                 //CheckInnoDBPArtitions, This is not compatible with MariaDB
                 Util.BoxedText("\n", "Checking for MySQL Native Partition which is not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
