@@ -71,7 +71,7 @@ public class MySQLMain {
                 ValidateDataTypes(oSchema, "DataTypesToCheck");
 
                 //FunctionsToCheck
-                Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views & Source Code in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
+                Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInViews(oSchema, "FunctionsToCheck");
                 System.out.println();
                 CheckInProcedures(oSchema, "FunctionsToCheck");
@@ -79,7 +79,7 @@ public class MySQLMain {
                 CheckInTriggers(oSchema, "FunctionsToCheck");
 
                 //CheckCreateTableSpace
-                Util.BoxedText("\n", "Checking for CREATE TABLESPACVE in Stored Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
+                Util.BoxedText("\n", "Checking for CREATE TABLESPACVE in Stored Procedures in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInProcedures(oSchema, "CheckCreateTableSpace");
                 System.out.println();
                 CheckInTriggers(oSchema, "CheckCreateTableSpace");
