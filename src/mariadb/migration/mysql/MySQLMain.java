@@ -61,7 +61,7 @@ public class MySQLMain {
             //Read The Database structure and objects
             MyDB = new MySQLDatabase(SourceCon.getDBConnection());
             Util.BoxedText("Parsing Completed", "-", 130);
-    
+
             Util.BoxedText("\n", "Starting Compatibility Check For Each Schema/Database", "", "=", 130);
 
             //Run Validations
@@ -115,7 +115,7 @@ public class MySQLMain {
                 //CheckFullTextParserPlugin, This is not compatible with MariaDB
                 Util.BoxedText("\n", "Checking FullText Plugins which are not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInTableScripts(oSchema, "CheckFullTextParserPlugin");
-                
+
                 //CheckMaxStatementSourceCode
                 Util.BoxedText("\n", "Checking for Hints in SQL statement that are not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 CheckInViews(oSchema, "CheckMaxStatementSourceCode");
@@ -145,7 +145,7 @@ public class MySQLMain {
             //SHA256PasswordCheck
             Util.BoxedText("\n", "Checking for SHA256 Plugin based Configuration", "", "*", 130);
             CheckGlobalVariables(MyDB, "SHA256PasswordCheck");
-            
+
             //EncryptionParametersToCheck
             Util.BoxedText("\n", "Checking for Transparent Data Encryption, TDE", "", "*", 130);
             CheckGlobalVariables(MyDB, "EncryptionParametersToCheck");
@@ -163,16 +163,20 @@ public class MySQLMain {
     }
 
     //Validate The Data Types and check against the "DataTypesToCheck"
-    private void ValidateDataTypes(SchemaHandler objSchema, String sParam) {
+    private JSONObject ValidateDataTypes(SchemaHandler objSchema, String sParam) {
         boolean bAlert = false;
         List<String> KeyVal = new ArrayList<String>();
+
+        JSONArray ReportArray = new JSONArray();
+        //Objects to store the JSON Report
+        JSONObject AssessmentReport = new JSONObject();
 
         //Get the related message text for this validation
         String MessageText = "";
         String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
 
         //Reset Tokens
-        ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
+        ObjectName=""; ObjectType="Table Column"; Arg1=""; Arg2="";
 
         for (TableHandler Tab : objSchema.getTables()) {
             for (ColumnHandler Col : Tab.getColumnCollection().getColumnList()) {
@@ -192,22 +196,57 @@ public class MySQLMain {
                     Arg2 = KeyVal.get(1);
 
                     if (Col.getDataType().toLowerCase().equals(KeyVal.get(0))) {
+                        JSONObject JsonRow = new JSONObject();
                         MessageText = MessageTemplate.
                                         replace("$OBJECTNAME$", ObjectName).
-                                        replace("$OBJECTTYPE$", ObjectType).
-                                        replace("$ARG1$", Arg1).
-                                        replace("$ARG2$", Arg2);
+                                            replace("$OBJECTTYPE$", ObjectType).
+                                                replace("$ARG1$", Arg1).
+                                                    replace("$ARG2$", Arg2);
+                        try {
+                            JsonRow.put("ObjectName", ObjectName);
+                            JsonRow.put("ObjectType", ObjectType);
+                            JsonRow.put("CurrentDataType", Arg1);
+                            JsonRow.put("RecommendedDataType", Arg2);
+                            JsonRow.put("Message", MessageText);
+                            ReportArray.put(JsonRow);
+                        } catch (JSONException jex) {
+                            System.out.println(jex.getMessage());
+                        }
+
                         System.out.println(MessageText);
                         bAlert = true;
                     }
                 }
             }
         }
-        if (!bAlert) { System.out.println("No Issues Found..."); }
+
+        try {
+            AssessmentReport.put("DatabaseName", objSchema.getSchemaName());
+            if (bAlert) {
+                if (ReportArray.length() > 0) {
+                    AssessmentReport.put("Alert", true);
+                    AssessmentReport.put("Summary", "Potential Compatibility Issues Found, review the Assessment Report");
+                    AssessmentReport.put("Report", ReportArray);
+                }
+            } else {
+                AssessmentReport.put("Alert", false);
+                AssessmentReport.put("Summary", "No Issues Found");
+                AssessmentReport.put("Report", new JSONArray());
+                System.out.println("No Issues Found...");
+            }
+        } catch (JSONException jex) {
+            System.out.println(jex.getMessage());
+        }
+        return AssessmentReport;
     }
-    
-    private void CheckInTableScripts(SchemaHandler objSchema, String sParam) {
+
+    private JSONObject CheckInTableScripts(SchemaHandler objSchema, String sParam) {
         boolean bAlert=false;
+
+        JSONArray ReportArray = new JSONArray();
+        //Objects to store the JSON Report
+        JSONObject AssessmentReport = new JSONObject();
+
 
         //Get the related message text for this validation
         String MessageText = "";
@@ -239,20 +278,52 @@ public class MySQLMain {
                 Arg1 = TextToSearch;
 
                 if (bTableAlert) {
+                    JSONObject JsonRow = new JSONObject();
                     MessageText = MessageTemplate.
                                     replace("$OBJECTNAME$", ObjectName).
-                                    replace("$OBJECTTYPE$", ObjectType).
-                                    replace("$ARG1$", Arg1).
-                                    replace("$ARG2$", Arg2);
+                                        replace("$OBJECTTYPE$", ObjectType).
+                                            replace("$ARG1$", Arg1).
+                                                replace("$ARG2$", Arg2);
+                    try {
+                        JsonRow.put("ObjectName", ObjectName);
+                        JsonRow.put("ObjectType", ObjectType);
+                        JsonRow.put("CurrentDataType", Arg1);
+                        JsonRow.put("RecommendedDataType", Arg2);
+                        JsonRow.put("Message", MessageText);
+                        ReportArray.put(JsonRow);
+                    } catch (JSONException jex) {
+                        System.out.println(jex.getMessage());
+                    }
                     System.out.println(MessageText);
                 }
             }
         }
-        if (!bAlert) { System.out.println("No Issues Found..."); }
+        try {
+            AssessmentReport.put("DatabaseName", objSchema.getSchemaName());
+            if (bAlert) {
+                if (ReportArray.length() > 0) {
+                    AssessmentReport.put("Alert", true);
+                    AssessmentReport.put("Summary", "Potential Compatibility Issues Found, review the Assessment Report");
+                    AssessmentReport.put("Report", ReportArray);
+                }
+            } else {
+                AssessmentReport.put("Alert", false);
+                AssessmentReport.put("Summary", "No Issues Found");
+                AssessmentReport.put("Report", new JSONArray());
+                System.out.println("No Issues Found...");
+            }
+        } catch (JSONException jex) {
+            System.out.println(jex.getMessage());
+        }
+        return AssessmentReport;    
     }
 
-    private void CheckInViews(SchemaHandler objSchema, String sParam) {
+    private JSONObject CheckInViews(SchemaHandler objSchema, String sParam) {
         boolean bAlert=false;
+
+        JSONArray ReportArray = new JSONArray();
+        //Objects to store the JSON Report
+        JSONObject AssessmentReport = new JSONObject();
 
         //Get the related message text for this validation
         String MessageText = "";
@@ -270,23 +341,54 @@ public class MySQLMain {
                         ObjectType = "View";
                         Arg1 = TextToSearch;
 
-                        //Set the Message Output
+                        JSONObject JsonRow = new JSONObject();
                         MessageText = MessageTemplate.
                                         replace("$OBJECTNAME$", ObjectName).
-                                        replace("$OBJECTTYPE$", ObjectType).
-                                        replace("$ARG1$", Arg1).
-                                        replace("$ARG2$", Arg2);
+                                            replace("$OBJECTTYPE$", ObjectType).
+                                                replace("$ARG1$", Arg1).
+                                                    replace("$ARG2$", Arg2);
+                        try {
+                            JsonRow.put("ObjectName", ObjectName);
+                            JsonRow.put("ObjectType", ObjectType);
+                            JsonRow.put("CurrentDataType", Arg1);
+                            JsonRow.put("RecommendedDataType", Arg2);
+                            JsonRow.put("Message", MessageText);
+                            ReportArray.put(JsonRow);
+                        } catch (JSONException jex) {
+                            System.out.println(jex.getMessage());
+                        }
                         System.out.println(MessageText);
                         bAlert = true;
                     }
                 }
             }
         }
-        if (!bAlert) { System.out.println("No Issues Found..."); }
+        try {
+            AssessmentReport.put("DatabaseName", objSchema.getSchemaName());
+            if (bAlert) {
+                if (ReportArray.length() > 0) {
+                    AssessmentReport.put("Alert", true);
+                    AssessmentReport.put("Summary", "Potential Compatibility Issues Found, review the Assessment Report");
+                    AssessmentReport.put("Report", ReportArray);
+                }
+            } else {
+                AssessmentReport.put("Alert", false);
+                AssessmentReport.put("Summary", "No Issues Found");
+                AssessmentReport.put("Report", new JSONArray());
+                System.out.println("No Issues Found...");
+            }
+        } catch (JSONException jex) {
+            System.out.println(jex.getMessage());
+        }
+        return AssessmentReport;    
     }
 
-    private void CheckInProcedures(SchemaHandler objSchema, String sParam) {
+    private JSONObject CheckInProcedures(SchemaHandler objSchema, String sParam) {
         boolean bAlert=false;
+
+        JSONArray ReportArray = new JSONArray();
+        //Objects to store the JSON Report
+        JSONObject AssessmentReport = new JSONObject();
 
         //Get the related message text for this validation
         String MessageText = "";
@@ -304,22 +406,55 @@ public class MySQLMain {
                         ObjectType = srcCode.getSourceType();
                         Arg1 = FunctionName;
 
+                        JSONObject JsonRow = new JSONObject();
+                        //Replace all the tokens in the Message String with values
                         MessageText = MessageTemplate.
                                         replace("$OBJECTNAME$", ObjectName).
-                                        replace("$OBJECTTYPE$", ObjectType).
-                                        replace("$ARG1$", Arg1).
-                                        replace("$ARG2$", Arg2);
+                                            replace("$OBJECTTYPE$", ObjectType).
+                                                replace("$ARG1$", Arg1).
+                                                    replace("$ARG2$", Arg2);
+                        try {
+                            JsonRow.put("ObjectName", ObjectName);
+                            JsonRow.put("ObjectType", ObjectType);
+                            JsonRow.put("CurrentDataType", Arg1);
+                            JsonRow.put("RecommendedDataType", Arg2);
+                            JsonRow.put("Message", MessageText);
+                            ReportArray.put(JsonRow);
+                        } catch (JSONException jex) {
+                            System.out.println(jex.getMessage());
+                        }
                         System.out.println(MessageText);
                         bAlert = true;
                     }
                 }
             }
         }
-        if (!bAlert) { System.out.println("No Issues Found..."); }
+        try {
+            AssessmentReport.put("DatabaseName", objSchema.getSchemaName());
+            if (bAlert) {
+                if (ReportArray.length() > 0) {
+                    AssessmentReport.put("Alert", true);
+                    AssessmentReport.put("Summary", "Potential Compatibility Issues Found, review the Assessment Report");
+                    AssessmentReport.put("Report", ReportArray);
+                }
+            } else {
+                AssessmentReport.put("Alert", false);
+                AssessmentReport.put("Summary", "No Issues Found");
+                AssessmentReport.put("Report", new JSONArray());
+                System.out.println("No Issues Found...");
+            }
+        } catch (JSONException jex) {
+            System.out.println(jex.getMessage());
+        }
+        return AssessmentReport;    
     }
 
-    private void CheckInTriggers(SchemaHandler objSchema, String sParam) {
+    private JSONObject CheckInTriggers(SchemaHandler objSchema, String sParam) {
         boolean bAlert=false;
+
+        JSONArray ReportArray = new JSONArray();
+        //Objects to store the JSON Report
+        JSONObject AssessmentReport = new JSONObject();
 
         //Get the related message text for this validation
         String MessageText = "";
@@ -334,26 +469,59 @@ public class MySQLMain {
                 for (String strLine : Tab.getTriggers()) {
                     if (strLine.toLowerCase().contains(FunctionName)) {
                         ObjectName = Tab.getFullTableName();
-                        ObjectType = "Table";
+                        ObjectType = "Table.Trigger";
                         Arg1 = FunctionName;
 
+                        JSONObject JsonRow = new JSONObject();
+                        //Replace all the tokens in the Message String with values
                         MessageText = MessageTemplate.
                                         replace("$OBJECTNAME$", ObjectName).
-                                        replace("$OBJECTTYPE$", ObjectType).
-                                        replace("$ARG1$", Arg1).
-                                        replace("$ARG2$", Arg2);
+                                            replace("$OBJECTTYPE$", ObjectType).
+                                                replace("$ARG1$", Arg1).
+                                                    replace("$ARG2$", Arg2);
+                        try {
+                            JsonRow.put("ObjectName", ObjectName);
+                            JsonRow.put("ObjectType", ObjectType);
+                            JsonRow.put("CurrentDataType", Arg1);
+                            JsonRow.put("RecommendedDataType", Arg2);
+                            JsonRow.put("Message", MessageText);
+                            ReportArray.put(JsonRow);
+                        } catch (JSONException jex) {
+                            System.out.println(jex.getMessage());
+                        }
                         System.out.println(MessageText);
                         bAlert = true;
                     }
                 }
             }
         }
-        if (!bAlert) { System.out.println("No Issues Found..."); }
+        try {
+            AssessmentReport.put("DatabaseName", objSchema.getSchemaName());
+            if (bAlert) {
+                if (ReportArray.length() > 0) {
+                    AssessmentReport.put("Alert", true);
+                    AssessmentReport.put("Summary", "Potential Compatibility Issues Found, review the Assessment Report");
+                    AssessmentReport.put("Report", ReportArray);
+                }
+            } else {
+                AssessmentReport.put("Alert", false);
+                AssessmentReport.put("Summary", "No Issues Found");
+                AssessmentReport.put("Report", new JSONArray());
+                System.out.println("No Issues Found...");
+            }
+        } catch (JSONException jex) {
+            System.out.println(jex.getMessage());
+        }
+        return AssessmentReport;    
     }
 
-    private void CheckGlobalVariables(MySQLDatabase oMyDB, String sParam) {
+    private JSONObject CheckGlobalVariables(MySQLDatabase oMyDB, String sParam) {
         List<String> KeyVal = new ArrayList<String>();
         boolean bAlert=false;
+
+        JSONArray ReportArray = new JSONArray();
+        //Objects to store the JSON Report
+        JSONObject AssessmentReport = new JSONObject();
 
         //Get the related message text for this validation
         String MessageText = "";
@@ -367,7 +535,7 @@ public class MySQLMain {
             for (String pVar : getListOfValues(sParam)) {
                 String[] tmpArr = pVar.split(":");
                 Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim().toLowerCase());
-  
+
                 //Nothing to compare, continue back to the top of the loop
                 if (tmpArr.length <= 0) {
                     continue;
@@ -382,23 +550,57 @@ public class MySQLMain {
                         Arg1 = gVars.getVariableName().toLowerCase();
                         Arg2 = gVars.getVariableValue().toString().toLowerCase();
 
+                        JSONObject JsonRow = new JSONObject();
+                        //Replace all the tokens in the Message String with values
                         MessageText = MessageTemplate.
                                         replace("$OBJECTNAME$", ObjectName).
-                                        replace("$OBJECTTYPE$", ObjectType).
-                                        replace("$ARG1$", Arg1).
-                                        replace("$ARG2$", Arg2);
+                                            replace("$OBJECTTYPE$", ObjectType).
+                                                replace("$ARG1$", Arg1).
+                                                    replace("$ARG2$", Arg2);
+                        try {
+                            JsonRow.put("ObjectName", ObjectName);
+                            JsonRow.put("ObjectType", ObjectType);
+                            JsonRow.put("CurrentDataType", Arg1);
+                            JsonRow.put("RecommendedDataType", Arg2);
+                            JsonRow.put("Message", MessageText);
+                            ReportArray.put(JsonRow);
+                        } catch (JSONException jex) {
+                            System.out.println(jex.getMessage());
+                        }
                         System.out.println(MessageText);
                         bAlert = true;
                     }
                 }
             }
         }
-        if (!bAlert) { System.out.println("No Issues Found..."); }
+        try {
+            AssessmentReport.put("DatabaseName", "NULL");
+            if (bAlert) {
+                if (ReportArray.length() > 0) {
+                    AssessmentReport.put("Alert", true);
+                    AssessmentReport.put("Summary", "Potential Compatibility Issues Found, review the Assessment Report");
+                    AssessmentReport.put("Report", ReportArray);
+                }
+            } else {
+                AssessmentReport.put("Alert", false);
+                AssessmentReport.put("Summary", "No Issues Found");
+                AssessmentReport.put("Report", new JSONArray());
+                System.out.println("No Issues Found...");
+            }
+        } catch (JSONException jex) {
+            System.out.println(jex.getMessage());
+        }
+        return AssessmentReport;    
     }
 
-    private void CheckBySQL(MySQLConnect SourceCon, SchemaHandler objSchema, String sParam) {
-		Statement StatementObj = null;
+    private JSONObject CheckBySQL(MySQLConnect SourceCon, SchemaHandler objSchema, String sParam) {
+        Statement StatementObj = null;
         ResultSet ResultSetObj = null;        
+
+        JSONArray ReportArray = new JSONArray();
+        //Objects to store the JSON Report
+        JSONObject AssessmentReport = new JSONObject();
+
         String SQLScript = Util.getPropertyValue(sParam).replace("?", "'" + objSchema.getSchemaName() + "'");
 
         //Get the related message text for this validation
@@ -409,9 +611,9 @@ public class MySQLMain {
         ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
         
         boolean bAlert=false;
-
-		try {
-			StatementObj = SourceCon.getDBConnection().createStatement();
+        
+        try {
+            StatementObj = SourceCon.getDBConnection().createStatement();
             ResultSetObj = StatementObj.executeQuery(SQLScript);
 
             while (ResultSetObj.next()) {
@@ -419,26 +621,55 @@ public class MySQLMain {
                 ObjectName = ResultSetObj.getString("resultSet");
                 ObjectType = "Table";
 
+                JSONObject JsonRow = new JSONObject();
+                //Replace all the tokens in the Message String with values
                 MessageText = MessageTemplate.
                                 replace("$OBJECTNAME$", ObjectName).
-                                replace("$OBJECTTYPE$", ObjectType).
-                                replace("$ARG1$", Arg1).
-                                replace("$ARG2$", Arg2);
+                                    replace("$OBJECTTYPE$", ObjectType).
+                                        replace("$ARG1$", Arg1).
+                                            replace("$ARG2$", Arg2);
+                try {
+                    JsonRow.put("ObjectName", ObjectName);
+                    JsonRow.put("ObjectType", ObjectType);
+                    JsonRow.put("CurrentDataType", Arg1);
+                    JsonRow.put("RecommendedDataType", Arg2);
+                    JsonRow.put("Message", MessageText);
+                    ReportArray.put(JsonRow);
+                } catch (JSONException jex) {
+                    System.out.println(jex.getMessage());
+                }
                 System.out.println(MessageText);
             }
 
-            if (!bAlert) { System.out.println("No Issues Found..."); }
-		} catch (SQLException e) {
-			System.out.println("*** Failed to Execute: " + SQLScript);
-			e.printStackTrace();
-		} finally {
+            try {
+                AssessmentReport.put("DatabaseName", "NULL");
+                if (bAlert) {
+                    if (ReportArray.length() > 0) {
+                        AssessmentReport.put("Alert", true);
+                        AssessmentReport.put("Summary", "Potential Compatibility Issues Found, review the Assessment Report");
+                        AssessmentReport.put("Report", ReportArray);
+                    }
+                } else {
+                    AssessmentReport.put("Alert", false);
+                    AssessmentReport.put("Summary", "No Issues Found");
+                    AssessmentReport.put("Report", new JSONArray());
+                    System.out.println("No Issues Found...");
+                }
+            } catch (JSONException jex) {
+                System.out.println(jex.getMessage());
+            }
+        } catch (SQLException e) {
+            System.out.println("*** Failed to Execute: " + SQLScript);
+            e.printStackTrace();
+        } finally {
             try {
                 if (ResultSetObj != null) { ResultSetObj.close(); }
                 if (StatementObj != null) { StatementObj.close(); }
             } catch (Exception ex) {
                 ex.printStackTrace();
-            } 
-        }       
+            }
+        }
+        return AssessmentReport;
     }
 
     private List<String> getListOfValues(String sParam) {
@@ -461,26 +692,5 @@ public class MySQLMain {
             }
         }
         return DataValues;
-    }
-
-    //Test Method
-    private void JSONWriterTest() {
-        JSONObject employeeDetails = new JSONObject();
-        JSONObject employeeDetails2 = new JSONObject();
-
-        try {
-            employeeDetails.put("Key1", "Value Super Smooth 1");
-            employeeDetails.put("Key2", "Value Super Smooth 2");
-            employeeDetails.put("Key3", "Value Super Smooth 3");
-            employeeDetails2.put("Key1", "Value Super Smooth x1");
-            employeeDetails2.put("Key2", "Value Super Smooth x2");
-            JSONArray ja = new JSONArray();
-            ja.put(employeeDetails);
-            ja.put(employeeDetails2);
-
-            System.out.println(ja.toString());
-        } catch (JSONException jex) {
-            System.out.println(jex.getMessage());
-        }        
     }
 }
