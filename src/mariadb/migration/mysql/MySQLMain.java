@@ -21,7 +21,7 @@ public class MySQLMain {
     public List<String> StringTerminator;
     String ObjectName, ObjectType, Arg1, Arg2;
 
-    public Logger JSON_Log = new Logger(ReportPath + FolderSeparator + "assessment_report.json");
+    public String JSON_Log = ReportPath + FolderSeparator + "assessment_report.json";
         
     DBCredentialsReader UCR = new DBCredentialsReader("resources/dbdetails.xml");
     
@@ -50,6 +50,7 @@ public class MySQLMain {
     }
 
     public void StartExodusAssess(DataSources oDataSource) throws Exception {
+        JSONObject FullReport;
         MySQLConnect SourceCon = null;
         MySQLDatabase MyDB = null;
         //Begin the Assessmentv
@@ -63,92 +64,114 @@ public class MySQLMain {
             Util.BoxedText("Parsing Completed", "-", 130);
 
             Util.BoxedText("\n", "Starting Compatibility Check For Each Schema/Database", "", "=", 130);
+            
+            //Created a final JSON Report Object
+            FullReport = new JSONObject();
+            FullReport.put("ServerName", oDataSource.getDBName());
+            FullReport.put("ServerIP", oDataSource.getHostName());
+            FullReport.put("ServerType", oDataSource.getDBType());
 
             //Run Validations
             for (SchemaHandler oSchema : MyDB.getSchemaList()) {
+                JSONObject SchemaReport = new JSONObject();
+
+                FullReport.put("SchemaName", oSchema.getSchemaName());
+
                 //DataTypesToCheck
                 Util.BoxedText("\n", "Checking for Unsupported Data Types in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                ValidateDataTypes(oSchema, "DataTypesToCheck");
+                SchemaReport.put("DataTypesCheck", ValidateDataTypes(oSchema, "DataTypesToCheck"));
 
                 //FunctionsToCheck
                 Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                CheckInViews(oSchema, "FunctionsToCheck");
+                SchemaReport.put("MySQLFunctionsCheck.Views", CheckInViews(oSchema, "FunctionsToCheck"));
                 System.out.println();
-                CheckInProcedures(oSchema, "FunctionsToCheck");
+                SchemaReport.put("MySQLFunctionsCheck.Procedures", CheckInProcedures(oSchema, "FunctionsToCheck"));
                 System.out.println();
-                CheckInTriggers(oSchema, "FunctionsToCheck");
+                SchemaReport.put("MySQLFunctionsCheck.Triggers", CheckInTriggers(oSchema, "FunctionsToCheck"));
 
                 //CheckCreateTableSpace
-                Util.BoxedText("\n", "Checking for CREATE TABLESPACVE in Stored Procedures in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                CheckInProcedures(oSchema, "CheckCreateTableSpace");
+                Util.BoxedText("\n", "Checking for CREATE TABLESPACVE in Stored Procedures & Triggers in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
+                SchemaReport.put("CreateTableSpace.Procedures", CheckInProcedures(oSchema, "CheckCreateTableSpace"));
                 System.out.println();
-                CheckInTriggers(oSchema, "CheckCreateTableSpace");
+                SchemaReport.put("CreateTableSpace.Triggers", CheckInTriggers(oSchema, "CheckCreateTableSpace"));
 
                 //CheckKeywords
                 Util.BoxedText("\n", "Checking for MariaDB Spcific Keywords used in MySQL Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                CheckInViews(oSchema, "CheckKeywords");
+                SchemaReport.put("CheckKeywords.Views", CheckInViews(oSchema, "CheckKeywords"));
                 System.out.println();
-                CheckInProcedures(oSchema, "CheckKeywords");
+                SchemaReport.put("CheckKeywords.Procedures", CheckInProcedures(oSchema, "CheckKeywords"));
                 System.out.println();
-                CheckInTriggers(oSchema, "CheckKeywords");
+                SchemaReport.put("CheckKeywords.Triggers", CheckInTriggers(oSchema, "CheckKeywords"));
 
                 //CheckJsonOperators
                 Util.BoxedText("\n", "Checking for MySQL Spcific JSON Operators `->` & `->>`used in Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                CheckInViews(oSchema, "CheckJsonOperators");
+                SchemaReport.put("CheckJSONOperators.Views", CheckInViews(oSchema, "CheckJsonOperators"));
                 System.out.println();
-                CheckInProcedures(oSchema, "CheckJsonOperators");
+                SchemaReport.put("CheckJSONOperators.Procedures", CheckInProcedures(oSchema, "CheckJsonOperators"));
                 System.out.println();
-                CheckInTriggers(oSchema, "CheckJsonOperators");
+                SchemaReport.put("CheckJSONOperators.Triggers", CheckInTriggers(oSchema, "CheckJsonOperators"));
 
                 //CheckJSONSearch, this is not a problem but may need further evaluation
                 Util.BoxedText("\n", "Checking for JSON_SEARCH() function used in Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                CheckInViews(oSchema, "CheckJSONSearch");
+                SchemaReport.put("CheckJSONSearch.Views", CheckInViews(oSchema, "CheckJSONSearch"));
                 System.out.println();
-                CheckInProcedures(oSchema, "CheckJSONSearch");
+                SchemaReport.put("CheckJSONSearch.Procedures", CheckInProcedures(oSchema, "CheckJSONSearch"));
                 System.out.println();
-                CheckInTriggers(oSchema, "CheckJSONSearch");
+                SchemaReport.put("CheckJSONSearch.Trigers", CheckInTriggers(oSchema, "CheckJSONSearch"));
 
                 //CheckInnoDBPArtitions, This is not compatible with MariaDB
                 Util.BoxedText("\n", "Checking for MySQL Native Partition which is not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                CheckInTableScripts(oSchema, "CheckInnoDBPArtitions");
+                SchemaReport.put("CheckInnoDBPartition", CheckInTableScripts(oSchema, "CheckInnoDBPArtitions"));
 
                 //CheckFullTextParserPlugin, This is not compatible with MariaDB
                 Util.BoxedText("\n", "Checking FullText Plugins which are not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                CheckInTableScripts(oSchema, "CheckFullTextParserPlugin");
+                SchemaReport.put("CheckMySQLPlugins", CheckInTableScripts(oSchema, "CheckFullTextParserPlugin"));
 
                 //CheckMaxStatementSourceCode
                 Util.BoxedText("\n", "Checking for Hints in SQL statement that are not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                CheckInViews(oSchema, "CheckMaxStatementSourceCode");
+                SchemaReport.put("CheckMaxStatelentParam.Views", CheckInViews(oSchema, "CheckMaxStatementSourceCode"));
                 System.out.println();
-                CheckInProcedures(oSchema, "CheckMaxStatementSourceCode");
+                SchemaReport.put("CheckMaxStatelentParam.Procedures", CheckInProcedures(oSchema, "CheckMaxStatementSourceCode"));
                 System.out.println();
-                CheckInTriggers(oSchema, "CheckMaxStatementSourceCode");
+                SchemaReport.put("CheckMaxStatelentParam.Triggers", CheckInTriggers(oSchema, "CheckMaxStatementSourceCode"));
 
                 //CheckMemCachedPlugin
                 Util.BoxedText("\n", "Checking for Tables using MemCache in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                CheckBySQL(SourceCon, oSchema, "CheckMemCachedPlugin");
+                SchemaReport.put("CheckMemCachgedTables", CheckBySQL(SourceCon, oSchema, "CheckMemCachedPlugin"));
+
+                //Append Schema Report JSON Object to the Report
+                FullReport.put("SchemaReport", SchemaReport);
             }
+            //Global Variables/Config Checck, not schema Specific
+            JSONObject GlobalReport = new JSONObject();
+
             Util.BoxedText("\n\n", "Starting Compatibility Check Using Global Scope", "", "=", 130);
 
             //CheckMaxStatementServerVariables
             Util.BoxedText("", "Checking for Variables Needs to be reviewed as MySQL uses miliseconds vs seconds in MariaDB", "", "*", 130);
-            CheckGlobalVariables(MyDB, "CheckMaxStatementServerVariables");
+            GlobalReport.put("VariableToReview", CheckGlobalVariables(MyDB, "CheckMaxStatementServerVariables"));
 
             //SystemVariablesToCheck
             Util.BoxedText("\n", "Checking for Other MySQL Specific System Variables", "", "*", 130);
-            CheckGlobalVariables(MyDB, "SystemVariablesToCheck");
+            GlobalReport.put("MySQLServerVariables", CheckGlobalVariables(MyDB, "SystemVariablesToCheck"));
 
             //CheckMySQLXPlugin
             Util.BoxedText("\n", "Checking MySQL X Plugin", "", "*", 130);
-            CheckGlobalVariables(MyDB, "CheckMySQLXPlugin");
+            GlobalReport.put("MySQLXPluginCheck", CheckGlobalVariables(MyDB, "CheckMySQLXPlugin"));
 
             //SHA256PasswordCheck
             Util.BoxedText("\n", "Checking for SHA256 Plugin based Configuration", "", "*", 130);
-            CheckGlobalVariables(MyDB, "SHA256PasswordCheck");
+            GlobalReport.put("MySQLSHA256Check", CheckGlobalVariables(MyDB, "SHA256PasswordCheck"));
 
             //EncryptionParametersToCheck
             Util.BoxedText("\n", "Checking for Transparent Data Encryption, TDE", "", "*", 130);
-            CheckGlobalVariables(MyDB, "EncryptionParametersToCheck");
+            GlobalReport.put("MySQLInnoDBEncryption", CheckGlobalVariables(MyDB, "EncryptionParametersToCheck"));
+
+            //Append Global Report to the Full Report 
+            FullReport.put("GlobalReport", GlobalReport);
+            
+            Logger FinalLog = new Logger(JSON_Log, FullReport.toString(3), false, false);
+            FinalLog.CloseLogFile();
 
         } catch (Exception e) {
             System.out.println("Error While Processing");
