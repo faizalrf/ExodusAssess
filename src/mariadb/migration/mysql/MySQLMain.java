@@ -67,19 +67,19 @@ public class MySQLMain {
             
             //Created a final JSON Report Object
             FullReport = new JSONObject();
-            FullReport.put("ServerName", oDataSource.getDBName());
+            FullReport.put("ServerName", oDataSource.getDBType());
             FullReport.put("ServerIP", oDataSource.getHostName());
-            FullReport.put("ServerType", oDataSource.getDBType());
 
+            //Schema Report Array Collection, This will be finally added to the FullReport JSON Object
+            JSONArray ASchemaReport = new JSONArray();
             //Run Validations
             for (SchemaHandler oSchema : MyDB.getSchemaList()) {
                 JSONObject SchemaReport = new JSONObject();
 
-                FullReport.put("SchemaName", oSchema.getSchemaName());
-
+                SchemaReport.put("SchemaName", oSchema.getSchemaName());
                 //DataTypesToCheck
                 Util.BoxedText("\n", "Checking for Unsupported Data Types in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                SchemaReport.put("DataTypesCheck", ValidateDataTypes(oSchema, "DataTypesToCheck"));
+                SchemaReport.put("DataTypesCheck.Tables", ValidateDataTypes(oSchema, "DataTypesToCheck"));
 
                 //FunctionsToCheck
                 Util.BoxedText("\n", "Checking for MySQL Specific Functions in Views/Procedures/Functions in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
@@ -121,7 +121,7 @@ public class MySQLMain {
 
                 //CheckInnoDBPArtitions, This is not compatible with MariaDB
                 Util.BoxedText("\n", "Checking for MySQL Native Partition which is not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                SchemaReport.put("CheckInnoDBPartition", CheckInTableScripts(oSchema, "CheckInnoDBPArtitions"));
+                SchemaReport.put("CheckInnoDBPartition.Tables", CheckInTableScripts(oSchema, "CheckInnoDBPArtitions"));
 
                 //CheckFullTextParserPlugin, This is not compatible with MariaDB
                 Util.BoxedText("\n", "Checking FullText Plugins which are not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
@@ -137,11 +137,13 @@ public class MySQLMain {
 
                 //CheckMemCachedPlugin
                 Util.BoxedText("\n", "Checking for Tables using MemCache in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                SchemaReport.put("CheckMemCachgedTables", CheckBySQL(SourceCon, oSchema, "CheckMemCachedPlugin"));
-
-                //Append Schema Report JSON Object to the Report
-                FullReport.put("SchemaReport", SchemaReport);
+                //System.out.println(CheckBySQL(SourceCon, oSchema, "CheckMemCachedPlugin").toString(4));
+                SchemaReport.put("CheckMemCached.Tables", CheckBySQL(SourceCon, oSchema, "CheckMemCachedPlugin"));
+                //Append Schema Report JSON Array to the Report, Each Schema will be an Array Element 
+                ASchemaReport.put(SchemaReport);
             }
+            //Insert the Array containing report from all the Schemas above to the Full Report
+            FullReport.put("SchemaReport", ASchemaReport);
             //Global Variables/Config Checck, not schema Specific
             JSONObject GlobalReport = new JSONObject();
 
@@ -190,6 +192,9 @@ public class MySQLMain {
         boolean bAlert = false;
         List<String> KeyVal = new ArrayList<String>();
 
+        //Get Keys To be replaced in the JSON Report as Labels
+        JSONKeys JKeys = getJSONKeys(sParam);
+
         JSONArray ReportArray = new JSONArray();
         //Objects to store the JSON Report
         JSONObject AssessmentReport = new JSONObject();
@@ -226,11 +231,11 @@ public class MySQLMain {
                                                 replace("$ARG1$", Arg1).
                                                     replace("$ARG2$", Arg2);
                         try {
-                            JsonRow.put("ObjectName", ObjectName);
-                            JsonRow.put("ObjectType", ObjectType);
-                            JsonRow.put("CurrentDataType", Arg1);
-                            JsonRow.put("RecommendedDataType", Arg2);
-                            JsonRow.put("Message", MessageText);
+                            if (!ObjectName.isEmpty()) { JsonRow.put("ObjectName", ObjectName); }
+                            if (!ObjectType.isEmpty()) { JsonRow.put("ObjectType", ObjectType); }
+                            if (!JKeys.LabelArg1.isEmpty()) { JsonRow.put(JKeys.LabelArg1, Arg1); }
+                            if (!JKeys.LabelArg2.isEmpty()) { JsonRow.put(JKeys.LabelArg2, Arg2); }
+                            if (!MessageText.isEmpty()) { JsonRow.put("Message", MessageText); }
                             ReportArray.put(JsonRow);
                         } catch (JSONException jex) {
                             System.out.println(jex.getMessage());
@@ -244,7 +249,6 @@ public class MySQLMain {
         }
 
         try {
-            AssessmentReport.put("DatabaseName", objSchema.getSchemaName());
             if (bAlert) {
                 if (ReportArray.length() > 0) {
                     AssessmentReport.put("Alert", true);
@@ -270,6 +274,8 @@ public class MySQLMain {
         //Objects to store the JSON Report
         JSONObject AssessmentReport = new JSONObject();
 
+        //Get Keys To be replaced in the JSON Report as Labels
+        JSONKeys JKeys = getJSONKeys(sParam);
 
         //Get the related message text for this validation
         String MessageText = "";
@@ -308,11 +314,11 @@ public class MySQLMain {
                                             replace("$ARG1$", Arg1).
                                                 replace("$ARG2$", Arg2);
                     try {
-                        JsonRow.put("ObjectName", ObjectName);
-                        JsonRow.put("ObjectType", ObjectType);
-                        JsonRow.put("CurrentDataType", Arg1);
-                        JsonRow.put("RecommendedDataType", Arg2);
-                        JsonRow.put("Message", MessageText);
+                        if (!ObjectName.isEmpty()) { JsonRow.put("ObjectName", ObjectName); }
+                        if (!ObjectType.isEmpty()) { JsonRow.put("ObjectType", ObjectType); }
+                        if (!JKeys.LabelArg1.isEmpty()) { JsonRow.put(JKeys.LabelArg1, Arg1); }
+                        if (!JKeys.LabelArg2.isEmpty()) { JsonRow.put(JKeys.LabelArg2, Arg2); }
+                        if (!MessageText.isEmpty()) { JsonRow.put("Message", MessageText); }
                         ReportArray.put(JsonRow);
                     } catch (JSONException jex) {
                         System.out.println(jex.getMessage());
@@ -322,7 +328,6 @@ public class MySQLMain {
             }
         }
         try {
-            AssessmentReport.put("DatabaseName", objSchema.getSchemaName());
             if (bAlert) {
                 if (ReportArray.length() > 0) {
                     AssessmentReport.put("Alert", true);
@@ -348,6 +353,9 @@ public class MySQLMain {
         //Objects to store the JSON Report
         JSONObject AssessmentReport = new JSONObject();
 
+        //Get Keys To be replaced in the JSON Report as Labels
+        JSONKeys JKeys = getJSONKeys(sParam);
+
         //Get the related message text for this validation
         String MessageText = "";
         String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
@@ -371,11 +379,11 @@ public class MySQLMain {
                                                 replace("$ARG1$", Arg1).
                                                     replace("$ARG2$", Arg2);
                         try {
-                            JsonRow.put("ObjectName", ObjectName);
-                            JsonRow.put("ObjectType", ObjectType);
-                            JsonRow.put("CurrentDataType", Arg1);
-                            JsonRow.put("RecommendedDataType", Arg2);
-                            JsonRow.put("Message", MessageText);
+                            if (!ObjectName.isEmpty()) { JsonRow.put("ObjectName", ObjectName); }
+                            if (!ObjectType.isEmpty()) { JsonRow.put("ObjectType", ObjectType); }
+                            if (!JKeys.LabelArg1.isEmpty()) { JsonRow.put(JKeys.LabelArg1, Arg1); }
+                            if (!JKeys.LabelArg2.isEmpty()) { JsonRow.put(JKeys.LabelArg2, Arg2); }
+                            if (!MessageText.isEmpty()) { JsonRow.put("Message", MessageText); }
                             ReportArray.put(JsonRow);
                         } catch (JSONException jex) {
                             System.out.println(jex.getMessage());
@@ -387,7 +395,6 @@ public class MySQLMain {
             }
         }
         try {
-            AssessmentReport.put("DatabaseName", objSchema.getSchemaName());
             if (bAlert) {
                 if (ReportArray.length() > 0) {
                     AssessmentReport.put("Alert", true);
@@ -413,6 +420,9 @@ public class MySQLMain {
         //Objects to store the JSON Report
         JSONObject AssessmentReport = new JSONObject();
 
+        //Get Keys To be replaced in the JSON Report as Labels
+        JSONKeys JKeys = getJSONKeys(sParam);
+
         //Get the related message text for this validation
         String MessageText = "";
         String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
@@ -437,11 +447,11 @@ public class MySQLMain {
                                                 replace("$ARG1$", Arg1).
                                                     replace("$ARG2$", Arg2);
                         try {
-                            JsonRow.put("ObjectName", ObjectName);
-                            JsonRow.put("ObjectType", ObjectType);
-                            JsonRow.put("CurrentDataType", Arg1);
-                            JsonRow.put("RecommendedDataType", Arg2);
-                            JsonRow.put("Message", MessageText);
+                            if (!ObjectName.isEmpty()) { JsonRow.put("ObjectName", ObjectName); }
+                            if (!ObjectType.isEmpty()) { JsonRow.put("ObjectType", ObjectType); }
+                            if (!JKeys.LabelArg1.isEmpty()) { JsonRow.put(JKeys.LabelArg1, Arg1); }
+                            if (!JKeys.LabelArg2.isEmpty()) { JsonRow.put(JKeys.LabelArg2, Arg2); }
+                            if (!MessageText.isEmpty()) { JsonRow.put("Message", MessageText); }
                             ReportArray.put(JsonRow);
                         } catch (JSONException jex) {
                             System.out.println(jex.getMessage());
@@ -453,7 +463,6 @@ public class MySQLMain {
             }
         }
         try {
-            AssessmentReport.put("DatabaseName", objSchema.getSchemaName());
             if (bAlert) {
                 if (ReportArray.length() > 0) {
                     AssessmentReport.put("Alert", true);
@@ -479,6 +488,9 @@ public class MySQLMain {
         //Objects to store the JSON Report
         JSONObject AssessmentReport = new JSONObject();
 
+        //Get Keys To be replaced in the JSON Report as Labels
+        JSONKeys JKeys = getJSONKeys(sParam);
+
         //Get the related message text for this validation
         String MessageText = "";
         String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
@@ -503,11 +515,11 @@ public class MySQLMain {
                                                 replace("$ARG1$", Arg1).
                                                     replace("$ARG2$", Arg2);
                         try {
-                            JsonRow.put("ObjectName", ObjectName);
-                            JsonRow.put("ObjectType", ObjectType);
-                            JsonRow.put("CurrentDataType", Arg1);
-                            JsonRow.put("RecommendedDataType", Arg2);
-                            JsonRow.put("Message", MessageText);
+                            if (!ObjectName.isEmpty()) { JsonRow.put("ObjectName", ObjectName); }
+                            if (!ObjectType.isEmpty()) { JsonRow.put("ObjectType", ObjectType); }
+                            if (!JKeys.LabelArg1.isEmpty()) { JsonRow.put(JKeys.LabelArg1, Arg1); }
+                            if (!JKeys.LabelArg2.isEmpty()) { JsonRow.put(JKeys.LabelArg2, Arg2); }
+                            if (!MessageText.isEmpty()) { JsonRow.put("Message", MessageText); }
                             ReportArray.put(JsonRow);
                         } catch (JSONException jex) {
                             System.out.println(jex.getMessage());
@@ -519,7 +531,6 @@ public class MySQLMain {
             }
         }
         try {
-            AssessmentReport.put("DatabaseName", objSchema.getSchemaName());
             if (bAlert) {
                 if (ReportArray.length() > 0) {
                     AssessmentReport.put("Alert", true);
@@ -545,6 +556,9 @@ public class MySQLMain {
         JSONArray ReportArray = new JSONArray();
         //Objects to store the JSON Report
         JSONObject AssessmentReport = new JSONObject();
+
+        //Get Keys To be replaced in the JSON Report as Labels
+        JSONKeys JKeys = getJSONKeys(sParam);
 
         //Get the related message text for this validation
         String MessageText = "";
@@ -581,11 +595,11 @@ public class MySQLMain {
                                                 replace("$ARG1$", Arg1).
                                                     replace("$ARG2$", Arg2);
                         try {
-                            JsonRow.put("ObjectName", ObjectName);
-                            JsonRow.put("ObjectType", ObjectType);
-                            JsonRow.put("CurrentDataType", Arg1);
-                            JsonRow.put("RecommendedDataType", Arg2);
-                            JsonRow.put("Message", MessageText);
+                            if (!ObjectName.isEmpty()) { JsonRow.put("ObjectName", ObjectName); }
+                            if (!ObjectType.isEmpty()) { JsonRow.put("ObjectType", ObjectType); }
+                            if (!JKeys.LabelArg1.isEmpty()) { JsonRow.put(JKeys.LabelArg1, Arg1); }
+                            if (!JKeys.LabelArg2.isEmpty()) { JsonRow.put(JKeys.LabelArg2, Arg2); }
+                            if (!MessageText.isEmpty()) { JsonRow.put("Message", MessageText); }
                             ReportArray.put(JsonRow);
                         } catch (JSONException jex) {
                             System.out.println(jex.getMessage());
@@ -597,7 +611,6 @@ public class MySQLMain {
             }
         }
         try {
-            AssessmentReport.put("DatabaseName", "NULL");
             if (bAlert) {
                 if (ReportArray.length() > 0) {
                     AssessmentReport.put("Alert", true);
@@ -623,6 +636,9 @@ public class MySQLMain {
         JSONArray ReportArray = new JSONArray();
         //Objects to store the JSON Report
         JSONObject AssessmentReport = new JSONObject();
+
+        //Get Keys To be replaced in the JSON Report as Labels
+        JSONKeys JKeys = getJSONKeys(sParam);
 
         String SQLScript = Util.getPropertyValue(sParam).replace("?", "'" + objSchema.getSchemaName() + "'");
 
@@ -652,11 +668,11 @@ public class MySQLMain {
                                         replace("$ARG1$", Arg1).
                                             replace("$ARG2$", Arg2);
                 try {
-                    JsonRow.put("ObjectName", ObjectName);
-                    JsonRow.put("ObjectType", ObjectType);
-                    JsonRow.put("CurrentDataType", Arg1);
-                    JsonRow.put("RecommendedDataType", Arg2);
-                    JsonRow.put("Message", MessageText);
+                    if (!ObjectName.isEmpty()) { JsonRow.put("ObjectName", ObjectName); }
+                    if (!ObjectType.isEmpty()) { JsonRow.put("ObjectType", ObjectType); }
+                    if (!JKeys.LabelArg1.isEmpty()) { JsonRow.put(JKeys.LabelArg1, Arg1); }
+                    if (!JKeys.LabelArg2.isEmpty()) { JsonRow.put(JKeys.LabelArg2, Arg2); }
+                    if (!MessageText.isEmpty()) { JsonRow.put("Message", MessageText); }
                     ReportArray.put(JsonRow);
                 } catch (JSONException jex) {
                     System.out.println(jex.getMessage());
@@ -665,7 +681,6 @@ public class MySQLMain {
             }
 
             try {
-                AssessmentReport.put("DatabaseName", "NULL");
                 if (bAlert) {
                     if (ReportArray.length() > 0) {
                         AssessmentReport.put("Alert", true);
@@ -716,4 +731,44 @@ public class MySQLMain {
         }
         return DataValues;
     }
+
+    //Split Key Values from the Given List
+    private JSONKeys getJSONKeys(String sParam) {
+        List<String> Keys = getListOfValues(sParam + ".JSONKeys");
+        //Return Object
+        JSONKeys objKeys = new JSONKeys();
+
+        //Parse the Key Value from the Property File
+        for (String key : Keys ) {
+            String[] tmpArr = key.split(":");
+            List<String> KeyVal = new ArrayList<String>();
+
+            Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim());
+            
+            if (tmpArr.length <= 0) {
+                continue;
+            }
+
+            KeyVal = Arrays.asList(tmpArr);
+            if (KeyVal.size() == 2) {
+                switch(KeyVal.get(0)) {
+                    case "arg1":
+                        objKeys.LabelArg1 = KeyVal.get(1);
+                        break;
+                    case "arg2":
+                        objKeys.LabelArg2 = KeyVal.get(1);
+                        break;
+                    default:
+                        objKeys.LabelArg1 = "";
+                        objKeys.LabelArg2 = "";
+                } 
+            }
+        }
+        return objKeys;
+    }
+
+    public class JSONKeys {
+        public String LabelArg1, LabelArg2;
+        JSONKeys() { LabelArg1 = ""; LabelArg2 = ""; }
+    }     
 }
