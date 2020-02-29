@@ -17,9 +17,21 @@ public class Util {
     public static ExodusPropertyReader exodusPrope = new ExodusPropertyReader("Exodus.properties");
     
     public static String getPropertyValue(String propName) {
-    	String PropertyValue="";
+		String PropertyValue="";
+		String StringTerminator="";
     	try {
+			StringTerminator = exodusPrope.getValue("StringTerminator");
+			String strTerm[] = StringTerminator.split(",");
+			//Remove the String Terminator, This will let one retreive leading/trailing spaces if needed in the Strings
 			PropertyValue = exodusPrope.getValue(propName);
+
+			if (strTerm.length >= 1) {
+				PropertyValue = PropertyValue.replace(strTerm[0], "");
+				if (strTerm.length == 2) {
+					PropertyValue = PropertyValue.replace(strTerm[1], "");
+				}
+			}
+
 			if (PropertyValue == null) {
 				PropertyValue="";
 			}

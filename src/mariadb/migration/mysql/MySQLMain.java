@@ -11,6 +11,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import mariadb.migration.*;
 
 public class MySQLMain {
@@ -43,6 +46,7 @@ public class MySQLMain {
                     StartExodusAssess(DC);
                 } catch (Exception ex) {
                     Util.BoxedText("\n\n", "Error while processing database `" + DC.getDBType() + "@" + DC.getHostName() + "`", "\n\n", "!", 130);
+                    ex.printStackTrace();
                 }
             }
         }
@@ -53,7 +57,7 @@ public class MySQLMain {
         JSONObject FullReport;
         MySQLConnect SourceCon = null;
         MySQLDatabase MyDB = null;
-        //Begin the Assessmentv
+
         try {
             //Initiate a new connection to MySQL server
             SourceCon = new MySQLConnect(oDataSource.getDBType());
@@ -90,7 +94,7 @@ public class MySQLMain {
                 SchemaReport.put("MySQLFunctionsCheck.Triggers", CheckInTriggers(oSchema, "FunctionsToCheck"));
 
                 //CheckCreateTableSpace
-                Util.BoxedText("\n", "Checking for CREATE TABLESPACVE in Stored Procedures & Triggers in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
+                Util.BoxedText("\n", "Checking for CREATE TABLESPACE in Stored Procedures & Triggers in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
                 SchemaReport.put("CreateTableSpace.Procedures", CheckInProcedures(oSchema, "CheckCreateTableSpace"));
                 System.out.println();
                 SchemaReport.put("CreateTableSpace.Triggers", CheckInTriggers(oSchema, "CheckCreateTableSpace"));
@@ -128,12 +132,22 @@ public class MySQLMain {
                 SchemaReport.put("CheckMySQLPlugins", CheckInTableScripts(oSchema, "CheckFullTextParserPlugin"));
 
                 //CheckMaxStatementSourceCode
-                Util.BoxedText("\n", "Checking for Hints in SQL statement that are not compatible with MariaDB in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
-                SchemaReport.put("CheckMaxStatelentParam.Views", CheckInViews(oSchema, "CheckMaxStatementSourceCode"));
+                Util.BoxedText("\n", "Checking for MAX_STATEMENT_TIME in SQL statements in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
+                SchemaReport.put("CheckMaxStatelentTime.Views", CheckInViews(oSchema, "CheckMaxStatementSourceCode"));
                 System.out.println();
-                SchemaReport.put("CheckMaxStatelentParam.Procedures", CheckInProcedures(oSchema, "CheckMaxStatementSourceCode"));
+                SchemaReport.put("CheckMaxStatelentTime.Procedures", CheckInProcedures(oSchema, "CheckMaxStatementSourceCode"));
                 System.out.println();
-                SchemaReport.put("CheckMaxStatelentParam.Triggers", CheckInTriggers(oSchema, "CheckMaxStatementSourceCode"));
+                SchemaReport.put("CheckMaxStatelentTime.Triggers", CheckInTriggers(oSchema, "CheckMaxStatementSourceCode"));
+
+                //CheckMaxStatementSourceCode
+                Util.BoxedText("\n", "Checking for MAX_EXECUTION_TIME Hints in SQL statement in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
+
+                //CheckMaxExecutionSourceCode
+                SchemaReport.put("CheckMaxExecutionTime.Views", CheckInViews(oSchema, "CheckMaxExecutionSourceCode"));
+                System.out.println();
+                SchemaReport.put("CheckMaxExecutionTime.Procedures", CheckInProcedures(oSchema, "CheckMaxExecutionSourceCode"));
+                System.out.println();
+                SchemaReport.put("CheckMaxExecutionTime.Triggers", CheckInTriggers(oSchema, "CheckMaxExecutionSourceCode"));
 
                 //CheckMemCachedPlugin
                 Util.BoxedText("\n", "Checking for Tables using MemCache in `" + oSchema.getSchemaName() + "` database", "", "*", 130);
@@ -285,10 +299,12 @@ public class MySQLMain {
         ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
 
         String AdditionalCriteria=Util.getPropertyValue(sParam + ".AND").toLowerCase();
+
         for (TableHandler Tab : objSchema.getTables()) {
             boolean bTableAlert=false;
             for (String TextToSearch : getListOfValues(sParam)) {
-                if (Tab.getTableScript().toLowerCase().contains(TextToSearch)) {
+                //Find the patterns using RegEx within the Table
+                if (checkRegEx(sParam, Tab.getTableScript().toLowerCase(), TextToSearch)) {
                     if (!AdditionalCriteria.isEmpty()) {
                         if (Tab.getTableScript().toLowerCase().contains(AdditionalCriteria)) {
                             bTableAlert = true;
@@ -359,7 +375,6 @@ public class MySQLMain {
         //Get the related message text for this validation
         String MessageText = "";
         String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
-
         //Reset Tokens
         ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
 
@@ -367,7 +382,8 @@ public class MySQLMain {
         for (ViewHandler View : objSchema.getViewsList()) {
             for (String TextToSearch : getListOfValues(sParam)) {
                 for (String ViewScript : View.getViewScript()) {
-                    if (ViewScript.toLowerCase().contains(TextToSearch)) {
+                    //Match against RegEX
+                    if (checkRegEx(sParam, ViewScript.toLowerCase(), TextToSearch)) {
                         ObjectName = View.getFullViewName();
                         ObjectType = "View";
                         Arg1 = TextToSearch;
@@ -426,7 +442,6 @@ public class MySQLMain {
         //Get the related message text for this validation
         String MessageText = "";
         String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
-
         //Reset Tokens
         ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
 
@@ -434,7 +449,8 @@ public class MySQLMain {
         for (SourceCodeHandler srcCode : objSchema.getSourceCodeList()) {
             for (String FunctionName : getListOfValues(sParam)) {
                 for (String strLine : srcCode.getSourceScript()) {
-                    if (strLine.toLowerCase().contains(FunctionName)) {
+                    //Check RegEX to identify that it's a function indeed
+                    if (checkRegEx(sParam, strLine.toLowerCase(), FunctionName)) {
                         ObjectName = srcCode.getFullObjectName();
                         ObjectType = srcCode.getSourceType();
                         Arg1 = FunctionName;
@@ -494,7 +510,6 @@ public class MySQLMain {
         //Get the related message text for this validation
         String MessageText = "";
         String MessageTemplate = Util.getPropertyValue(sParam + ".Message");
-
         //Reset Tokens
         ObjectName=""; ObjectType=""; Arg1=""; Arg2="";
 
@@ -502,7 +517,8 @@ public class MySQLMain {
         for (TableHandler Tab : objSchema.getTables()) {
             for (String FunctionName : getListOfValues(sParam)) {
                 for (String strLine : Tab.getTriggers()) {
-                    if (strLine.toLowerCase().contains(FunctionName)) {
+                    //Check RegEX to identify that it's a function indeed
+                    if (checkRegEx(sParam, strLine.toLowerCase(), FunctionName)) {
                         ObjectName = Tab.getFullTableName();
                         ObjectType = "Table.Trigger";
                         Arg1 = FunctionName;
@@ -574,7 +590,7 @@ public class MySQLMain {
                 Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim().toLowerCase());
 
                 //Nothing to compare, continue back to the top of the loop
-                if (tmpArr.length <= 0) {
+                if (tmpArr.length < 2) {
                     continue;
                 }
 
@@ -815,6 +831,25 @@ public class MySQLMain {
         }
 
         return tabExists;
+    }
+
+    //Function to Do RegEx validations
+    public boolean checkRegEx(String sParam, String MainString, String TextToFind) {
+        boolean ConditionMatched = false;
+        
+        if (!MainString.isEmpty()) {
+            String PreStringRegEX  = Util.getPropertyValue(sParam + ".PreStringRegEX");
+            String PostStringRegEX = Util.getPropertyValue(sParam + ".PostStringRegEX");
+            
+            //MainString is the full text from the database within which "TextToFind" will be searched using RegEx
+            Pattern pattern = Pattern.compile(PreStringRegEX + TextToFind + PostStringRegEX);
+            Matcher matcher = pattern.matcher(MainString);
+            
+            if (matcher.find()) {
+                ConditionMatched = true;
+            }
+        }
+        return ConditionMatched;
     }
 
     public class JSONKeys {
