@@ -366,7 +366,7 @@ No Issues Found...
 
 The `resources/Exodus.properties` containt additional configurations for.
 
-```bash
+```python
 ##############################################
 # MariaDB Migration Assessment Configuration.
 # Author: Faisal
@@ -378,67 +378,139 @@ SourceConnectParams=useUnicode=yes&characterEncoding=utf8&rewriteBatchedStatemen
 SourceConnectPrefix=jdbc:mariadb://
 #useUnicode=yes&characterEncoding=utf8&useSSL=false
 
+#Depending on the OS, for Linux "/" for Windoes "\"
+FolderSeparator=/
+
 #Paths with reference to the current folder. Do not use "/" at the end of the path
-LogPath=/../ExodusAssess/bin/logs
-ReportPath=/../ExodusAssess/bin/export
+LogPath=/home/faisal/Work/Java/ExodusAssess/bin/logs
+DDLPath=/home/faisal/Work/Java/ExodusAssess/bin/ddl
+ReportPath=/home/faisal/Work/Java/ExodusAssess/bin/export
+
 
 #Database User's to Migrate
 UsersToMigrate=USER NOT LIKE 'mysql%' AND USER NOT LIKE 'root%'
 
 #Databases to Migrate, Comma separated String values, use SQL WHERE clause compatible with the Source DB Data Dictionary Tables
-DatabaseToMigrate=SCHEMA_NAME NOT IN ('mysql', 'sys', 'performance_schema', 'information_schema')
+DatabaseToMigrate=SCHEMA_NAME NOT IN ('mysql', 'sys', 'performance_schema', 'information_schema', 'innodb_memcache')
+
+## In case a specific schema is required, use the following syntax, comment the above line!
+#DatabaseToMigrate=SCHEMA_NAME IN ('world')
 
 #Criteria to be added to the SELECT QUERY to filter down the tables for migration, use SQL WHERE clause compatible with the Source DB Data Dictionary Tables
-TablesToMigrate=TABLE_NAME LIKE '%'
+TablesToMigrate=TABLE_NAME like '%'
 
-#String Terminator Character
-StringTerminator=]
+#String Terminator Character Sequence used in the properties below as an example define values as
+## TmpStr = &!^ Value 1   ^!&, Value 2  ^!&, &!^   Value 3
+## To reflect spaces before and after the strings
+StringTerminator=&!^,^!&
 
 #These Tables will be Skipped from Migration, use SQL WHERE clause compatible with the Source DB Data Dictionary Tables.
 #The following Names should always be there, any additional tables, just add on to the list or use "AND additional expression"
-SkipTableMigration=TABLE_NAME IN ('MigrationLog', 'MigrationLogDETAIL')
+SkipTableMigration=TABLE_NAME IN ('')
 
 #Data Types to verify if exists in the MySQL Tables
-DataTypesToCheck=JSON
+DataTypesToCheck=JSON:LONGTEXT
+DataTypesToCheck.Message=$OBJECTNAME$ uses '$ARG1$' Datatype, This Column must be modified to '$ARG2$' before migration
+DataTypesToCheck.JSONKeys=ARG1:CurrentDataType, ARG2:RecommendedDataType
 
 #Functions to search for in the Source Code and Views
-FunctionsToCheck=GTID_SUBSET, GTID_SUBTRACT, WAIT_FOR_EXECUTED_GTID_SET, WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS, DISTANCE, MBRCOVEREDBY, ST_BUFFER_STRATEGY, ST_DISTANCE_SPHERE, ST_DISTANCE, ST_GeoHash, ST_IsValid, ST_LatFromGeoHash, ST_LongFromGeoHash, ST_PointFromGeoHash, ST_SIMPLIFY, ST_VALIDATE, RANDOM_BYTES, RELEASE_ALL_LOCKS, VALIDATE_PASSWORD_STRENGTH, VALUES ]
+FunctionsToCheck=GTID_SUBSET, GTID_SUBTRACT, WAIT_FOR_EXECUTED_GTID_SET, WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS, DISTANCE, MBRCOVEREDBY, ST_BUFFER_STRATEGY, ST_DISTANCE_SPHERE, ST_DISTANCE, ST_GeoHash, ST_IsValid, ST_LatFromGeoHash, ST_LongFromGeoHash, ST_PointFromGeoHash, ST_SIMPLIFY, ST_VALIDATE, RANDOM_BYTES, RELEASE_ALL_LOCKS, VALIDATE_PASSWORD_STRENGTH, VALUE
+FunctionsToCheck.PreStringRegEX=\\b
+FunctionsToCheck.PostStringRegEX=&!^ *\\(
+FunctionsToCheck.Message=$OBJECTNAME$ $OBJECTTYPE$ uses '$ARG1$' which is native to MySQL and NOT Supported in MariaDB
+FunctionsToCheck.JSONKeys=ARG1:FunctionName
 
 #System Variables to search for in the Server Config
-SystemVariablesToCheck=avoid_temporal_upgrade:OFF, binlog_error_action:ABORT_SERVER, binlog_group_commit_sync_delay:0, binlog_group_commit_sync_no_delay_count:0, binlog_gtid_simple_recovery:ON, binlog_max_flush_queue_time:0, binlog_order_commits:ON, binlog_rows_query_log_events:OFF, block_encryption_mode:aes-128-ecb, check_proxy_users:OFF, default_password_lifetime:0, disconnect_on_expired_password:ON, end_markers_in_json:OFF, enforce_gtid_consistency:OFF, gtid_executed:*, gtid_next:*, gtid_purged:*, internal_tmp_disk_storage_engine:INNODB, log_bin_use_v1_row_events:OFF, log_builtin_as_identified_by_password:OFF, log_error_verbosity:3, log_statements_unsafe_for_binlog:ON, log_throttle_queries_not_using_indexes:0, master_info_repository:FILE, max_execution_time:0, mysql_native_password_proxy_users:OFF, ngram_token_size:2, offline_mode:OFF, rbr_exec_mode:STRICT, relay_log_info_repository:FILE, require_secure_transport:OFF, rpl_stop_slave_timeout:31536000, server_id_bits:32, session_track_gtids:OFF, sha256_password_proxy_users:OFF, show_compatibility_56:OFF, show_old_temporals:OFF, slave_allow_batching:OFF, slave_checkpoint_group:512, slave_checkpoint_period:300, slave_parallel_type:DATABASE, slave_pending_jobs_size_max:16777216, slave_preserve_commit_order:OFF, super_read_only:OFF, transaction_allow_batching:OFF, transaction_write_set_extraction:OFF
+SystemVariablesToCheck=avoid_temporal_upgrade:OFF, binlog_error_action:ABORT_SERVER, binlog_group_commit_sync_delay:0, binlog_group_commit_sync_no_delay_count:0, binlog_gtid_simple_recovery:ON, binlog_max_flush_queue_time:0, binlog_order_commits:ON, binlog_rows_query_log_events:OFF, block_encryption_mode:aes-128-ecb, check_proxy_users:OFF, default_password_lifetime:0, disconnect_on_expired_password:ON, end_markers_in_json:OFF, enforce_gtid_consistency:OFF, gtid_executed:*, gtid_next:*, gtid_purged:*, internal_tmp_disk_storage_engine:INNODB, log_bin_use_v1_row_events:OFF, log_builtin_as_identified_by_password:OFF, log_error_verbosity:3, log_statements_unsafe_for_binlog:ON, log_throttle_queries_not_using_indexes:0, master_info_repository:FILE, mysql_native_password_proxy_users:OFF, ngram_token_size:2, offline_mode:OFF, rbr_exec_mode:STRICT, relay_log_info_repository:FILE, require_secure_transport:OFF, rpl_stop_slave_timeout:31536000, server_id_bits:32, session_track_gtids:OFF, sha256_password_proxy_users:OFF, show_compatibility_56:OFF, show_old_temporals:OFF, slave_allow_batching:OFF, slave_checkpoint_group:512, slave_checkpoint_period:300, slave_parallel_type:DATABASE, slave_pending_jobs_size_max:16777216, slave_preserve_commit_order:OFF, super_read_only:OFF, transaction_allow_batching:OFF, transaction_write_set_extraction:OFF
+SystemVariablesToCheck.Message='$ARG1$($ARG2$)' is configured in the my.cnf file and is not compatible with MariaDB. This needs to be removed.
+SystemVariablesToCheck.JSONKeys=ARG1:VariableName, ARG2:ConfiguredValue
 
 #Check for CREATE TABLESPACE or other special commands that exists in MySQL and not in MariaDB
 CheckCreateTableSpace=CREATE TABLESPACE
+CheckCreateTableSpace.PreStringRegEX=\\b
+CheckCreateTableSpace.PostStringRegEX=&!^ *
+CheckCreateTableSpace.Message=$OBJECTNAME$ Uses '$ARG1$' which is not supported by MariaDB 
+CheckCreateTableSpace.JSONKeys=ARG1:Command
 
 #Keywords check
 CheckKeywords=OVER, ROWS, RECURSIVE
+CheckKeywords.PreStringRegEX=\\b *
+CheckKeywords.PostStringRegEX=&!^ *
+CheckKeywords.Message=$OBJECTNAME$ $OBJECTTYPE$ is using the '$ARG1$' which is a reserved word in MariaDB.\nThis needs to be enclosed within "``" or renamed.
+CheckKeywords.JSONKeys=ARG1:ReservedKeyword
 
 #JSON Operators
 CheckJsonOperators=->, ->>
+CheckJsonOperators.PreStringRegEX=\\b\\w*
+CheckJsonOperators.PostStringRegEX=['\"]*\\$*\\w+\\s*['\"]
+CheckJsonOperators.Message=$OBJECTNAME$ $OBJECTTYPE$ is using the MySQL specific operator '$ARG1$' which is not supported by MariaDB
+CheckJsonOperators.JSONKeys=ARG1:Operator
 
 #Check for JSON_SEARCH() function
-CheckJSON_SEARCH=JSON_SEARCH
+CheckJSONSearch=JSON_SEARCH
+CheckJSONSearch.PreStringRegEX=\\b
+CheckJSONSearch.PostStringRegEX=&!^ *\\(
+CheckJSONSearch.Message=$OBJECTNAME$ $OBJECTTYPE$ is using the '$ARG1$' which has a different behaviour in MariaDB vs MySQL, app testing needs to be done.
+CheckJSONSearch.JSONKeys=ARG1:FunctionName
 
-# Full Text Search Plugins Validion whihc are not supported by MariaDB
-CheckFullTextParserPlugin=ngram, mecab
+# Full Text Search Plugins Validion whihc are not supported by MariaDB !!!
+CheckFullTextParserPlugin=WITH PARSER `ngram`, WITH PARSER `mecab`
+CheckFullTextParserPlugin.PreStringRegEX=\\b
+CheckFullTextParserPlugin.PostStringRegEX=&!^ *
+CheckFullTextParserPlugin.Message=$OBJECTNAME$ is using the MySQL specific Plugin '$ARG1$' which is not supported by MariaDB
+CheckFullTextParserPlugin.JSONKeys=ARG1:PluginName
 
 #SHA256 Password Plugin
 SHA256PasswordCheck=default_authentication_plugin:mysql_native_password
+SHA256PasswordCheck.Message=Default user account authentication is set to '$ARG1$($ARG2$)' which is not supported by MariaDB.\n\tThese Users needs to be recreated in MariaDB.
+CheckFullTextParserPlugin.JSONKeys=ARG1:AuthenticationMode
 
 #InnoDB Encryption Check
-EncryptionParametersToCheck=keyring_file_data:data, keyring_encrypted_file_data:data
+#This is a key value pair, the :* represents any value any value
+EncryptionParametersToCheck=keyring_file_data:*, keyring_encrypted_file_data:*
+EncryptionParametersToCheck.Message=MySQL InnoDB native Encryption config '$ARG1$' found, this is not supported by MariaDB.\n\tMariaDB native TDE needs to be set-up again.  
+EncryptionParametersToCheck.JSONKeys=ARG1:VariableName
 
 #MySQL X Pugin to secure connections is not supported by MariaDB
-CheckMySQLXPlugin=mysqlx-ssl-ca, mysqlx-ssl-cert, mysqlx-ssl-key
+#This is a key value pair, the :* represents any value any value
+CheckMySQLXPlugin=mysqlx-ssl-ca:*, mysqlx-ssl-cert:*, mysqlx-ssl-key:*
+CheckMySQLXPlugin.Message='$ARG1$' MySQL X Plugin detected. This is not supported by MariaDB
+CheckMySQLXPlugin.JSONKeys=ARG1:VariableName
 
 #MySQL Native InnoDB Partitioning is not supported by MariaDB
 CheckInnoDBPArtitions=PARTITION BY
+CheckInnoDBPArtitions.PreStringRegEX=\\b *
+CheckInnoDBPArtitions.PostStringRegEX=&!^ *
+CheckInnoDBPArtitions.AND=ENGINE=InnoDB
+CheckInnoDBPArtitions.Message=`$OBJECTNAME$` is partitioned using InnoDB Native Partition, this is not supported by MariaDB.\n\tNeeds to be re-partitioned after Migration.  
+CheckInnoDBPArtitions.JSONKeys=
 
-#Check the timeout parameters in the SELECT statements and server configurations
-CheckMaxStatementTime=MAX_STATEMENT_TIME, MAX_EXECUTION_TIME
+#Check the timeout parameters in the SELECT statements (Views/Stored Procedures/Functions)
+CheckMaxExecutionSourceCode=MAX_EXECUTION_TIME
+CheckMaxExecutionSourceCode.PreStringRegEX=(?<=\\+) *
+CheckMaxExecutionSourceCode.PostStringRegEX=&!^ *\\( *[0-9]* *\\) *\\*\\/
+CheckMaxExecutionSourceCode.Message=`$OBJECTNAME$` $OBJECTTYPE$ uses '$ARG1$' in statements which is not supported by MariaDB 
+CheckMaxExecutionSourceCode.JSONKeys=ARG1:VariableName
 
-#Checks for the Memcached Plugin and identifies the list of tables using it.
-CheckMemCachedPlugin=plugin:daemon_memcached, CachedTableList:SELECT name,db_schema, db_table FROM tinnodb_memcache.container
+#Check the timeout parameters in the SELECT statements (Views/Stored Procedures/Functions)
+CheckMaxStatementSourceCode=MAX_EXECUTION_TIME
+CheckMaxStatementSourceCode.PreStringRegEX=\\b *
+CheckMaxStatementSourceCode.PostStringRegEX=&!^ \\b *(\\= *[0-9])
+CheckMaxStatementSourceCode.Message=`$OBJECTNAME$` $OBJECTTYPE$ uses '$ARG1$' in statements which is not supported by MariaDB 
+CheckMaxStatementSourceCode.JSONKeys=ARG1:VariableName
+
+#Check the timeout parameters in the server configurations, only applicable to MySQL 5.7.7 and older
+CheckMaxStatementServerVariables=MAX_STATEMENT_TIME:0, MAX_EXECUTION_TIME:0
+CheckMaxStatementServerVariables.Message='$ARG1$($ARG2$)' Server Variable value needs to be verified, MariaDB reads this as Seconds instead of Miliseconds in MySQL.
+CheckMaxStatementServerVariables.JSONKeys=ARG1:VariableName, ARG2:ConfiguredValue
+
+#Checks for the Memcache Plugin and identifies the list of tables using it. "?" will be replaced by the schema name within the code
+CheckMemCachedPlugin.SchemaName=innodb_memcache
+CheckMemCachedPlugin.TableName=containers
+CheckMemCachedPlugin.Query=SELECT Concat("`", db_schema, "`.`", db_table, "`")
+CheckMemCachedPlugin.Criteria=db_schema=?
+CheckMemCachedPlugin.Message=`$OBJECTNAME$` table uses '$ARG1$'. This will still work after migration but server startup will throw errors about missing memcache plugin library.
+CheckMemCachedPlugin.JSONKeys=ARG1:Memcached Plugin
 ```
 
 This tool assumes that the source database is MySQL 5.7 and uses MariaDB Java Connector to connect to MySQL.
@@ -495,6 +567,15 @@ The following are the parameters from the `Exodus.properties` file
   - These parameters will also be scanned against the ServerConfig as MySQL uses MiliSeconds while MariaDB uses Seconds for these two.
 - `CheckMemCachedPlugin`
   - This will validate if the memcached plugin is installed and tables are currently using it. All those tables will be flagged.
+    - Define the Schema, Table Name to query, the Main SELECT clause and the WHERE criteria as separate parameters. 
+    - Internally the code will look for the table in the data dictionary before executing the query.
+- `PreStringRegEX`
+  - Many of the above search parameters have Pre and Post String RegEX arguments. These are appended in the code when searching for those values. Having these as configurables, makes it easy to tweak without needing them to rebuild the code.
+- `PostStringRegEX`
+  - Many of the above search parameters have Pre and Post String RegEX arguments. PostString arguments are applied at the end of the search string. Together these enclose the search arguments for a complete RegEx expression, for instance:
+    - To search for th string `/*+ MAX_EXECUTION_TIME(1000) */` within the Stored Procedures or Views following Post/Pre expressions are applied to the string `MAX_EXECUTION_TIME` as 
+      - `(?<=\\+) *` as PreString and ` *\\( *[0-9]* *\\) *\\*\\/` as PostString
+        - `(?<=\\+) *MAX_EXECUTION_TIME *\\( *[0-9]* *\\) *\\*\\/` This is able to trap the string `MAX_EXECUTION_TIME` with its HINT pre-requisites of having /*+ at the left side and a number within the brackets () followed by a */
 
 
 ## Mapping of incompatibilities vs Exodus

@@ -17,7 +17,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 CLASSPATH=
-export CLASSPATH=.:/home/faisal/Work/Java/ExodusAssess/resources/mariadb-java-client-2.4.1.jar::/home/faisal/Work/Java/ExodusAssess/resources/java-json.jar
+export CLASSPATH=.:/home/faisal/Work/Java/ExodusAssess/resources/mariadb-java-client-2.4.1.jar:/home/faisal/Work/Java/ExodusAssess/resources/java-json.jar
 clear
 
 mkdir -p resources
