@@ -21,4 +21,11 @@
 		<PortNumber>3306</PortNumber>
 		<DatabaseName>mysql</DatabaseName>
 	</DataProvider>
+	<DataProvider ServerName="DataBase4">
+		<UserName>migration</UserName>
+		<Password>password</Password>
+		<HostName>192.168.56.104</HostName>
+		<PortNumber>3306</PortNumber>
+		<DatabaseName>mysql</DatabaseName>
+	</DataProvider>
 </DataSources>

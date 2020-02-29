@@ -631,7 +631,8 @@ public class MySQLMain {
 
     private JSONObject CheckBySQL(MySQLConnect SourceCon, SchemaHandler objSchema, String sParam) {
         Statement StatementObj = null;
-        ResultSet ResultSetObj = null;        
+        ResultSet ResultSetObj = null;
+
 
         JSONArray ReportArray = new JSONArray();
         //Objects to store the JSON Report
@@ -640,7 +641,15 @@ public class MySQLMain {
         //Get Keys To be replaced in the JSON Report as Labels
         JSONKeys JKeys = getJSONKeys(sParam);
 
-        String SQLScript = Util.getPropertyValue(sParam).replace("?", "'" + objSchema.getSchemaName() + "'");
+        String SchemaName = Util.getPropertyValue(sParam + ".SchemaName"), 
+                TableName = Util.getPropertyValue(sParam + ".TableName"),
+                Criteria  = Util.getPropertyValue(sParam + ".Criteria");
+
+        String SQLScript = "";
+        SQLScript = Util.getPropertyValue(sParam + ".Query") + " FROM " + 
+                        SchemaName + "." + 
+                        TableName + " WHERE " + 
+                        Criteria.replace("?", "'" + objSchema.getSchemaName() + "'");
 
         //Get the related message text for this validation
         String MessageText = "";
@@ -651,62 +660,66 @@ public class MySQLMain {
         
         boolean bAlert=false;
         
-        try {
-            StatementObj = SourceCon.getDBConnection().createStatement();
-            ResultSetObj = StatementObj.executeQuery(SQLScript);
-
-            while (ResultSetObj.next()) {
-                bAlert=true;
-                ObjectName = ResultSetObj.getString("resultSet");
-                ObjectType = "Table";
-
-                JSONObject JsonRow = new JSONObject();
-                //Replace all the tokens in the Message String with values
-                MessageText = MessageTemplate.
-                                replace("$OBJECTNAME$", ObjectName).
-                                    replace("$OBJECTTYPE$", ObjectType).
-                                        replace("$ARG1$", Arg1).
-                                            replace("$ARG2$", Arg2);
-                try {
-                    if (!ObjectName.isEmpty()) { JsonRow.put("ObjectName", ObjectName); }
-                    if (!ObjectType.isEmpty()) { JsonRow.put("ObjectType", ObjectType); }
-                    if (!JKeys.LabelArg1.isEmpty()) { JsonRow.put(JKeys.LabelArg1, Arg1); }
-                    if (!JKeys.LabelArg2.isEmpty()) { JsonRow.put(JKeys.LabelArg2, Arg2); }
-                    if (!MessageText.isEmpty()) { JsonRow.put("Message", MessageText); }
-                    ReportArray.put(JsonRow);
-                } catch (JSONException jex) {
-                    System.out.println(jex.getMessage());
-                }
-                System.out.println(MessageText);
-            }
-
+        // If MemCached Data Dictionary Table does not exists, then return "NO ISSUES FOUND"
+        if (TableExists(SourceCon, SchemaName, TableName)) {
             try {
-                if (bAlert) {
-                    if (ReportArray.length() > 0) {
-                        AssessmentReport.put("Alert", true);
-                        AssessmentReport.put("Summary", "Potential Compatibility Issues Found, review the Assessment Report");
-                        AssessmentReport.put("Report", ReportArray);
+                StatementObj = SourceCon.getDBConnection().createStatement();
+                ResultSetObj = StatementObj.executeQuery(SQLScript);
+
+                while (ResultSetObj.next()) {
+                    bAlert=true;
+                    ObjectName = ResultSetObj.getString(1);
+                    ObjectType = "Table";
+
+                    JSONObject JsonRow = new JSONObject();
+                    //Replace all the tokens in the Message String with values
+                    MessageText = MessageTemplate.
+                                    replace("$OBJECTNAME$", ObjectName).
+                                        replace("$OBJECTTYPE$", ObjectType).
+                                            replace("$ARG1$", Arg1).
+                                                replace("$ARG2$", Arg2);
+                    try {
+                        if (!ObjectName.isEmpty()) { JsonRow.put("ObjectName", ObjectName); }
+                        if (!ObjectType.isEmpty()) { JsonRow.put("ObjectType", ObjectType); }
+                        if (!JKeys.LabelArg1.isEmpty()) { JsonRow.put(JKeys.LabelArg1, Arg1); }
+                        if (!JKeys.LabelArg2.isEmpty()) { JsonRow.put(JKeys.LabelArg2, Arg2); }
+                        if (!MessageText.isEmpty()) { JsonRow.put("Message", MessageText); }
+                        ReportArray.put(JsonRow);
+                    } catch (JSONException jex) {
+                        System.out.println(jex.getMessage());
                     }
-                } else {
-                    AssessmentReport.put("Alert", false);
-                    AssessmentReport.put("Summary", "No Issues Found");
-                    AssessmentReport.put("Report", new JSONArray());
-                    System.out.println("No Issues Found...");
+                    System.out.println(MessageText);
                 }
-            } catch (JSONException jex) {
-                System.out.println(jex.getMessage());
+            } catch (SQLException e) {
+                System.out.println("*** Failed to Execute: " + SQLScript);
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (ResultSetObj != null) { ResultSetObj.close(); }
+                    if (StatementObj != null) { StatementObj.close(); }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
-        } catch (SQLException e) {
-            System.out.println("*** Failed to Execute: " + SQLScript);
-            e.printStackTrace();
-        } finally {
-            try {
-                if (ResultSetObj != null) { ResultSetObj.close(); }
-                if (StatementObj != null) { StatementObj.close(); }
-            } catch (Exception ex) {
-                ex.printStackTrace();
+        } 
+
+        try {
+            if (bAlert) {
+                if (ReportArray.length() > 0) {
+                    AssessmentReport.put("Alert", true);
+                    AssessmentReport.put("Summary", "Potential Compatibility Issues Found, review the Assessment Report");
+                    AssessmentReport.put("Report", ReportArray);
+                }
+            } else {
+                AssessmentReport.put("Alert", false);
+                AssessmentReport.put("Summary", "No Issues Found");
+                AssessmentReport.put("Report", new JSONArray());
+                System.out.println("No Issues Found...");
             }
+        } catch (JSONException jex) {
+            System.out.println(jex.getMessage());
         }
+
         return AssessmentReport;
     }
 
@@ -714,20 +727,24 @@ public class MySQLMain {
         String sValues = Util.getPropertyValue(sParam);
         List<String> DataValues = new ArrayList<String>();
 
-        //To Trim all spaces from the Array Read
-        String[] tmpArr = sValues.split(",");
-        Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim().toLowerCase());
-        if (tmpArr.length > 0) {
-            DataValues = Arrays.asList(tmpArr);
-        }
-        int currIndex;
-        //Handle the String Terminators
-        for (String Terminator : StringTerminator) {
-            currIndex=0;
-            for (String itemText : DataValues) {
-                DataValues.set(currIndex, itemText.replace(Terminator, ""));
-                currIndex++;
+        try {
+            //To Trim all spaces from the Array Read
+            String[] tmpArr = sValues.split(",");
+            Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim().toLowerCase());
+            if (tmpArr.length > 0) {
+                DataValues = Arrays.asList(tmpArr);
             }
+            int currIndex;
+            //Handle the String Terminators
+            for (String Terminator : StringTerminator) {
+                currIndex=0;
+                for (String itemText : DataValues) {
+                    DataValues.set(currIndex, itemText.replace(Terminator, ""));
+                    currIndex++;
+                }
+            }
+        } catch (Exception ex) {
+            DataValues.clear();
         }
         return DataValues;
     }
@@ -737,34 +754,67 @@ public class MySQLMain {
         List<String> Keys = getListOfValues(sParam + ".JSONKeys");
         //Return Object
         JSONKeys objKeys = new JSONKeys();
+        try {
+            //Parse the Key Value from the Property File
+            for (String key : Keys ) {
+                String[] tmpArr = key.split(":");
+                List<String> KeyVal = new ArrayList<String>();
 
-        //Parse the Key Value from the Property File
-        for (String key : Keys ) {
-            String[] tmpArr = key.split(":");
-            List<String> KeyVal = new ArrayList<String>();
+                Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim());
+                
+                if (tmpArr.length <= 0) {
+                    continue;
+                }
 
-            Arrays.parallelSetAll(tmpArr, (i) -> tmpArr[i].trim());
-            
-            if (tmpArr.length <= 0) {
-                continue;
+                KeyVal = Arrays.asList(tmpArr);
+                if (KeyVal.size() == 2) {
+                    switch(KeyVal.get(0)) {
+                        case "arg1":
+                            objKeys.LabelArg1 = KeyVal.get(1);
+                            break;
+                        case "arg2":
+                            objKeys.LabelArg2 = KeyVal.get(1);
+                            break;
+                        default:
+                            objKeys.LabelArg1 = "";
+                            objKeys.LabelArg2 = "";
+                    } 
+                }
             }
-
-            KeyVal = Arrays.asList(tmpArr);
-            if (KeyVal.size() == 2) {
-                switch(KeyVal.get(0)) {
-                    case "arg1":
-                        objKeys.LabelArg1 = KeyVal.get(1);
-                        break;
-                    case "arg2":
-                        objKeys.LabelArg2 = KeyVal.get(1);
-                        break;
-                    default:
-                        objKeys.LabelArg1 = "";
-                        objKeys.LabelArg2 = "";
-                } 
-            }
+        } catch (Exception ex) {
+            objKeys.LabelArg1="";
+            objKeys.LabelArg2="";
         }
         return objKeys;
+    }
+
+    //To check if a particular Table Exists!
+    public boolean TableExists(MySQLConnect SourceCon, String SchemaName, String TableName) {
+        boolean tabExists=false;
+        Statement StatementObj = null;
+        ResultSet ResultSetObj = null;        
+
+        String SQLScript = "SELECT COUNT(*) TabCount FROM information_schema.tables where table_schema = '" + SchemaName + 
+                            "' AND table_name = '" + TableName + "'";
+
+        //Execute the SQL
+        try {
+            StatementObj = SourceCon.getDBConnection().createStatement();
+            ResultSetObj = StatementObj.executeQuery(SQLScript);
+
+            //This will always return a ROW
+            ResultSetObj.next();
+
+            //Check if the TabCount value is greater than ZERO, table exists!
+            if (ResultSetObj.getInt("TabCount") > 0)  {
+                tabExists = true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            tabExists = false;
+        }
+
+        return tabExists;
     }
 
     public class JSONKeys {
