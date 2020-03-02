@@ -1,6 +1,8 @@
 # Exodus Assessment
 
-Migration Assessment Tool for MySQL 5.7 to MariaDB 10.3+ Migration
+Migration Assessment Tool for MySQL 5.7 to MariaDB 10.3+ Migrations, this is to be taken as a utility and not a product!
+
+Refer to the "Releases" and download the latest GA version.
 
 The executable script is the Java class file `ExodusAssess.class` which takes one commandline argument.
 
