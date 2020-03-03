@@ -24,4 +24,4 @@ mkdir -p resources
 
 cp *.jar *.xml *.properties resources
 
-java -Xms1024m -Xmx2048m mariadb.migration.ExodusAssess ${DatabaseName}
+java -Xms1024m -Xmx2048m mariadb.migration.Exodus ${DatabaseName}
