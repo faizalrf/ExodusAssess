@@ -1,7 +1,7 @@
 package mariadb.migration;
 
 //Exodus Unified Main Code
-public class ExodusAssess {
+public class Exodus {
     public static void main(String[] args) {
         String CommandLineParam = "mysql", SourceDB = "ALL";
         System.out.println("\n");

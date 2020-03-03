@@ -6,9 +6,9 @@
                   "name": "Debug (Launch)",
                   "console": "internalConsole",
                   "request": "launch",
-                  "mainClass": "mariadb.migration.ExodusAssess",
+                  "mainClass": "mariadb.migration.Exodus",
                   "args": "database3",
-                  "projectName": "ExodusAssess"
+                  "projectName": "Exodus"
             }
       ]
 }
