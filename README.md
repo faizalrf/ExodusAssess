@@ -4,7 +4,7 @@ Migration Assessment Tool for MySQL 5.7 to MariaDB 10.3+ Migrations, this is to 
 
 Refer to the "Releases" and download the latest GA version.
 
-The executable script is the Java class file `ExodusAssess.class` which takes one commandline argument.
+The executable script is the Java class file `Exodus.class` which takes one commandline argument.
 
 - Source Database Name
   - This parameter links up with `DataProvider ServerName` of the `resources/dbdetails.xml` 
@@ -47,7 +47,7 @@ The `resources/dbdetails.xml` has the following contents, this sample has three 
 The following sample output using `database3` as the argument which will read the configuration for mysql running on `192.168.56.103`, if `ALL` is passed as the argument instead, the tool will scan through all the databases configured in the `resources/dbdetails.xml` file. 
 
 ```
-shell> java ExodusAssess database3
+shell> java Exodus database3
 
 
 Assessment Path: database3
