@@ -1,6 +1,6 @@
 @echo off
 cls
-set CLASSPATH=.;C:\Work\Java\ExodusAssess\bin\resources\mariadb-java-client-2.4.1.jar; C:\Work\Java\ExodusAssess\bin\resources\java-json.jar
+set CLASSPATH=.\;D:\Work\Java\ExodusAssess\bin\resources\mariadb-java-client-2.4.1.jar;D:\Work\Java\ExodusAssess\bin\resources\java-json.jar
 
 mkdir resources>nul 2>nul
 mkdir ddl>nul 2>nul
@@ -12,4 +12,4 @@ copy *.xml resources>nul 2>nul
 copy *.properties resources>nul 2>nul
 
 @echo on
-java -Xms6196m -Xmx10240m mariadb.migration.ExodusAssess
+java -Xms6196m -Xmx10240m mariadb.migration.Exodus ALL
