@@ -8,7 +8,7 @@
                   "request": "launch",
                   "mainClass": "mariadb.migration.Exodus",
                   "args": "database3",
-                  "projectName": "Exodus"
+                  "projectName": "ExodusAssess"
             }
       ]
 }
